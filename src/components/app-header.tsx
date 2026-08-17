@@ -1,6 +1,8 @@
 "use client";
 
+import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { NewCycleDialog } from "@/components/new-cycle-dialog";
 import { SignOutButton } from "@/components/sign-out-button";
 import {
   Select,
@@ -16,6 +18,7 @@ const NEW_CYCLE_VALUE = "__new_cycle__";
 type CycleOption = {
   id: string;
   name: string;
+  isActive: boolean;
 };
 
 type AppHeaderProps = {
@@ -30,9 +33,11 @@ export function AppHeader({
   view,
 }: AppHeaderProps) {
   const router = useRouter();
+  const [newCycleOpen, setNewCycleOpen] = useState(false);
 
   function onCycleChange(value: string) {
     if (value === NEW_CYCLE_VALUE) {
+      setNewCycleOpen(true);
       return;
     }
 
@@ -57,13 +62,18 @@ export function AppHeader({
             <SelectContent position="popper" align="start">
               {cycles.map((cycle) => (
                 <SelectItem key={cycle.id} value={cycle.id}>
-                  {cycle.name}
+                  <span className="flex min-w-0 items-center gap-2">
+                    <span className="truncate">{cycle.name}</span>
+                    {cycle.isActive ? (
+                      <span className="rounded-md bg-muted px-1.5 py-0.5 text-[0.65rem] font-medium tracking-wide text-muted-foreground uppercase">
+                        Active
+                      </span>
+                    ) : null}
+                  </span>
                 </SelectItem>
               ))}
               <SelectSeparator />
-              <SelectItem disabled value={NEW_CYCLE_VALUE}>
-                + New cycle
-              </SelectItem>
+              <SelectItem value={NEW_CYCLE_VALUE}>+ New cycle</SelectItem>
             </SelectContent>
           </Select>
         ) : (
@@ -74,6 +84,12 @@ export function AppHeader({
           <SignOutButton />
         </div>
       </div>
+
+      <NewCycleDialog
+        open={newCycleOpen}
+        onOpenChange={setNewCycleOpen}
+        view={view}
+      />
     </header>
   );
 }

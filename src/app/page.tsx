@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 import { AppHeader } from "@/components/app-header";
 import { BoardView } from "@/components/board-view";
+import { EmptyCyclesPrompt } from "@/components/new-cycle-dialog";
 import { StatCards } from "@/components/stat-cards";
 import {
   getActiveCycle,
@@ -41,11 +42,7 @@ export default async function Home({ searchParams }: PageProps<"/">) {
     return (
       <div className="min-h-full">
         <AppHeader cycles={cycles} selectedCycleId={null} view={view} />
-        <div className="mx-auto max-w-6xl px-6 py-10">
-          <p className="text-sm text-muted-foreground">
-            No recruiting cycles yet.
-          </p>
-        </div>
+        <EmptyCyclesPrompt view={view} />
       </div>
     );
   }
