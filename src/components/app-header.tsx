@@ -24,7 +24,7 @@ type CycleOption = {
 type AppHeaderProps = {
   cycles: CycleOption[];
   selectedCycleId: string | null;
-  view?: "table" | "board";
+  view?: "table" | "board" | "insights";
 };
 
 export function AppHeader({

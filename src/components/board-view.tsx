@@ -2,6 +2,7 @@
 
 import { useRouter, useSearchParams } from "next/navigation";
 import { ApplicationsTable } from "@/components/applications-table";
+import { InsightsView } from "@/components/insights-view";
 import { KanbanBoard } from "@/components/kanban-board";
 import { Button } from "@/components/ui/button";
 import type { ApplicationFormRecord } from "@/components/application-form";
@@ -11,12 +12,21 @@ type BoardViewProps = {
   cycleId: string;
 };
 
+type BoardViewMode = "table" | "board" | "insights";
+
+function parseBoardView(value: string | null): BoardViewMode {
+  if (value === "board" || value === "insights") {
+    return value;
+  }
+  return "table";
+}
+
 export function BoardView({ applications, cycleId }: BoardViewProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const view = searchParams.get("view") === "board" ? "board" : "table";
+  const view = parseBoardView(searchParams.get("view"));
 
-  function setView(next: "table" | "board") {
+  function setView(next: BoardViewMode) {
     const params = new URLSearchParams(searchParams.toString());
     params.set("view", next);
     router.replace(`/?${params.toString()}`);
@@ -47,9 +57,20 @@ export function BoardView({ applications, cycleId }: BoardViewProps) {
         >
           Board
         </Button>
+        <Button
+          type="button"
+          size="sm"
+          variant={view === "insights" ? "secondary" : "ghost"}
+          aria-pressed={view === "insights"}
+          onClick={() => setView("insights")}
+        >
+          Insights
+        </Button>
       </div>
 
-      {view === "board" ? (
+      {view === "insights" ? (
+        <InsightsView applications={applications} />
+      ) : view === "board" ? (
         <KanbanBoard applications={applications} cycleId={cycleId} />
       ) : (
         <ApplicationsTable applications={applications} cycleId={cycleId} />

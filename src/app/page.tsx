@@ -14,9 +14,9 @@ export const dynamic = "force-dynamic";
 
 function parseView(
   value: string | string[] | undefined
-): "table" | "board" | undefined {
+): "table" | "board" | "insights" | undefined {
   const view = Array.isArray(value) ? value[0] : value;
-  if (view === "table" || view === "board") {
+  if (view === "table" || view === "board" || view === "insights") {
     return view;
   }
   return undefined;

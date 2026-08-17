@@ -21,7 +21,7 @@ function suggestedCycleName() {
 type NewCycleDialogProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  view?: "table" | "board";
+  view?: "table" | "board" | "insights";
 };
 
 export function NewCycleDialog({
@@ -104,7 +104,11 @@ export function NewCycleDialog({
   );
 }
 
-export function EmptyCyclesPrompt({ view }: { view?: "table" | "board" }) {
+export function EmptyCyclesPrompt({
+  view,
+}: {
+  view?: "table" | "board" | "insights";
+}) {
   const [open, setOpen] = useState(false);
 
   return (
