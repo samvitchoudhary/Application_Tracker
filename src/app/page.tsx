@@ -1,4 +1,6 @@
+import { Suspense } from "react";
 import { AppHeader } from "@/components/app-header";
+import { BoardView } from "@/components/board-view";
 import { StatCards } from "@/components/stat-cards";
 import {
   getActiveCycle,
@@ -9,11 +11,22 @@ import {
 
 export const dynamic = "force-dynamic";
 
+function parseView(
+  value: string | string[] | undefined
+): "table" | "board" | undefined {
+  const view = Array.isArray(value) ? value[0] : value;
+  if (view === "table" || view === "board") {
+    return view;
+  }
+  return undefined;
+}
+
 export default async function Home({ searchParams }: PageProps<"/">) {
   const params = await searchParams;
   const cycleParam = Array.isArray(params.cycle)
     ? params.cycle[0]
     : params.cycle;
+  const view = parseView(params.view);
 
   const [cycles, activeCycle] = await Promise.all([
     getCycles(),
@@ -27,7 +40,7 @@ export default async function Home({ searchParams }: PageProps<"/">) {
   if (!selectedCycle) {
     return (
       <div className="min-h-full">
-        <AppHeader cycles={cycles} selectedCycleId={null} />
+        <AppHeader cycles={cycles} selectedCycleId={null} view={view} />
         <div className="mx-auto max-w-6xl px-6 py-10">
           <p className="text-sm text-muted-foreground">
             No recruiting cycles yet.
@@ -44,16 +57,19 @@ export default async function Home({ searchParams }: PageProps<"/">) {
 
   return (
     <div className="min-h-full">
-      <AppHeader cycles={cycles} selectedCycleId={selectedCycle.id} />
+      <AppHeader
+        cycles={cycles}
+        selectedCycleId={selectedCycle.id}
+        view={view}
+      />
       <div className="mx-auto flex max-w-6xl flex-col gap-8 px-6 py-8">
         <StatCards stats={stats} />
-        <ul className="space-y-1 text-sm">
-          {applications.map((application) => (
-            <li key={application.id}>
-              {application.company} — {application.role} — {application.status}
-            </li>
-          ))}
-        </ul>
+        <Suspense fallback={null}>
+          <BoardView
+            applications={applications}
+            cycleId={selectedCycle.id}
+          />
+        </Suspense>
       </div>
     </div>
   );

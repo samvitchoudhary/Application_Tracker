@@ -21,9 +21,14 @@ type CycleOption = {
 type AppHeaderProps = {
   cycles: CycleOption[];
   selectedCycleId: string | null;
+  view?: "table" | "board";
 };
 
-export function AppHeader({ cycles, selectedCycleId }: AppHeaderProps) {
+export function AppHeader({
+  cycles,
+  selectedCycleId,
+  view,
+}: AppHeaderProps) {
   const router = useRouter();
 
   function onCycleChange(value: string) {
@@ -31,7 +36,12 @@ export function AppHeader({ cycles, selectedCycleId }: AppHeaderProps) {
       return;
     }
 
-    router.push(`/?cycle=${value}`);
+    const params = new URLSearchParams();
+    params.set("cycle", value);
+    if (view) {
+      params.set("view", view);
+    }
+    router.push(`/?${params.toString()}`);
   }
 
   return (
