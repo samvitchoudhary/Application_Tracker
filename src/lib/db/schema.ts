@@ -1,14 +1,16 @@
-import { relations } from "drizzle-orm";
+import { relations, sql } from "drizzle-orm";
 import {
   boolean,
   date,
   index,
+  jsonb,
   pgEnum,
   pgTable,
   text,
   timestamp,
   uuid,
 } from "drizzle-orm/pg-core";
+import { OUTCOMES, STAGES, type StageEvent } from "../stages";
 
 export const statusEnum = pgEnum("status", [
   "Applied",
@@ -17,6 +19,10 @@ export const statusEnum = pgEnum("status", [
   "Offer",
   "Rejected",
 ]);
+
+export const stageEnum = pgEnum("stage", STAGES);
+
+export const outcomeEnum = pgEnum("outcome", OUTCOMES);
 
 export const priorityEnum = pgEnum("priority", ["High", "Medium", "Low"]);
 
@@ -46,6 +52,12 @@ export const applications = pgTable(
     link: text("link"),
     dateApplied: date("date_applied").notNull().defaultNow(),
     status: statusEnum("status").notNull().default("Applied"),
+    currentStage: stageEnum("current_stage").notNull().default("Applied"),
+    outcome: outcomeEnum("outcome"),
+    stageEvents: jsonb("stage_events")
+      .$type<StageEvent[]>()
+      .notNull()
+      .default(sql`'[]'::jsonb`),
     priority: priorityEnum("priority").notNull().default("Medium"),
     notes: text("notes"),
     createdAt: timestamp("created_at").notNull().defaultNow(),
