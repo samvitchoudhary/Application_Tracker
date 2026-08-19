@@ -1,32 +1,23 @@
 "use client";
 
 import { useRouter, useSearchParams } from "next/navigation";
-import { ApplicationsTable } from "@/components/applications-table";
-import { InsightsView } from "@/components/insights-view";
-import { KanbanBoard } from "@/components/kanban-board";
-import { Button } from "@/components/ui/button";
 import type { ApplicationFormRecord } from "@/components/application-form";
+import { InsightsView } from "@/components/insights-view";
+import { PipelineTable } from "@/components/pipeline-table";
+import { Button } from "@/components/ui/button";
+import { parseAppView, type AppView } from "@/lib/views";
 
 type BoardViewProps = {
   applications: ApplicationFormRecord[];
   cycleId: string;
 };
 
-type BoardViewMode = "table" | "board" | "insights";
-
-function parseBoardView(value: string | null): BoardViewMode {
-  if (value === "board" || value === "insights") {
-    return value;
-  }
-  return "table";
-}
-
 export function BoardView({ applications, cycleId }: BoardViewProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const view = parseBoardView(searchParams.get("view"));
+  const view = parseAppView(searchParams.get("view"));
 
-  function setView(next: BoardViewMode) {
+  function setView(next: AppView) {
     const params = new URLSearchParams(searchParams.toString());
     params.set("view", next);
     router.replace(`/?${params.toString()}`);
@@ -42,20 +33,11 @@ export function BoardView({ applications, cycleId }: BoardViewProps) {
         <Button
           type="button"
           size="sm"
-          variant={view === "table" ? "secondary" : "ghost"}
-          aria-pressed={view === "table"}
-          onClick={() => setView("table")}
+          variant={view === "pipeline" ? "secondary" : "ghost"}
+          aria-pressed={view === "pipeline"}
+          onClick={() => setView("pipeline")}
         >
-          Table
-        </Button>
-        <Button
-          type="button"
-          size="sm"
-          variant={view === "board" ? "secondary" : "ghost"}
-          aria-pressed={view === "board"}
-          onClick={() => setView("board")}
-        >
-          Board
+          Pipeline
         </Button>
         <Button
           type="button"
@@ -70,10 +52,8 @@ export function BoardView({ applications, cycleId }: BoardViewProps) {
 
       {view === "insights" ? (
         <InsightsView applications={applications} />
-      ) : view === "board" ? (
-        <KanbanBoard applications={applications} cycleId={cycleId} />
       ) : (
-        <ApplicationsTable applications={applications} cycleId={cycleId} />
+        <PipelineTable applications={applications} cycleId={cycleId} />
       )}
     </section>
   );

@@ -8,11 +8,21 @@ import {
   applications,
   cycles,
   priorityEnum,
-  statusEnum,
   type Application,
   type Cycle,
   type NewApplication,
 } from "@/lib/db/schema";
+import {
+  furthestStage,
+  hasReachedOffer,
+  isOfferOnlyOutcome,
+  isOutcome,
+  isStage,
+  validateStageEvents,
+  type Outcome,
+  type Stage,
+  type StageEvent,
+} from "@/lib/stages";
 
 export type ActionResult<T> =
   | { success: true; data: T }
@@ -25,7 +35,6 @@ export type ApplicationWrite = {
   locations?: string | null;
   link?: string | null;
   dateApplied?: string | null;
-  status?: (typeof statusEnum.enumValues)[number];
   priority?: (typeof priorityEnum.enumValues)[number];
   notes?: string | null;
 };
@@ -35,19 +44,22 @@ export type ApplicationPatch = Partial<ApplicationWrite>;
 const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
-const STATUSES = statusEnum.enumValues;
 const PRIORITIES = priorityEnum.enumValues;
 
 function isUuid(value: string) {
   return UUID_RE.test(value);
 }
 
-function isStatus(value: string): value is (typeof STATUSES)[number] {
-  return (STATUSES as readonly string[]).includes(value);
-}
-
 function isPriority(value: string): value is (typeof PRIORITIES)[number] {
   return (PRIORITIES as readonly string[]).includes(value);
+}
+
+function todayIsoDate() {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, "0");
+  const day = String(now.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
 }
 
 function requiredText(
@@ -89,6 +101,16 @@ async function ownedCycle(userId: string, cycleId: string) {
   return cycle ?? null;
 }
 
+async function ownedApplication(userId: string, id: string) {
+  const [application] = await db
+    .select()
+    .from(applications)
+    .where(and(eq(applications.id, id), eq(applications.userId, userId)))
+    .limit(1);
+
+  return application ?? null;
+}
+
 function parseApplicationWrite(
   data: ApplicationWrite
 ): { ok: false; error: string } | { ok: true; values: Omit<NewApplication, "userId"> } {
@@ -106,10 +128,6 @@ function parseApplicationWrite(
     return role;
   }
 
-  if (data.status !== undefined && !isStatus(data.status)) {
-    return { ok: false, error: "Invalid status." };
-  }
-
   if (data.priority !== undefined && !isPriority(data.priority)) {
     return { ok: false, error: "Invalid priority." };
   }
@@ -121,6 +139,8 @@ function parseApplicationWrite(
     return { ok: false, error: "Date applied must be YYYY-MM-DD." };
   }
 
+  const dateApplied = data.dateApplied || todayIsoDate();
+
   return {
     ok: true,
     values: {
@@ -130,8 +150,10 @@ function parseApplicationWrite(
       locations: optionalText(data.locations),
       link: optionalText(data.link),
       notes: optionalText(data.notes),
-      ...(data.dateApplied ? { dateApplied: data.dateApplied } : {}),
-      ...(data.status ? { status: data.status } : {}),
+      dateApplied,
+      currentStage: "Applied",
+      outcome: null,
+      stageEvents: [{ stage: "Applied", date: dateApplied }],
       ...(data.priority ? { priority: data.priority } : {}),
     },
   };
@@ -227,13 +249,6 @@ export async function updateApplication(
     }
   }
 
-  if (data.status !== undefined) {
-    if (!isStatus(data.status)) {
-      return { success: false, error: "Invalid status." };
-    }
-    patch.status = data.status;
-  }
-
   if (data.priority !== undefined) {
     if (!isPriority(data.priority)) {
       return { success: false, error: "Invalid priority." };
@@ -245,6 +260,162 @@ export async function updateApplication(
     .update(applications)
     .set({ ...patch, updatedAt: new Date() })
     .where(and(eq(applications.id, id), eq(applications.userId, userId)))
+    .returning();
+
+  if (!application) {
+    return { success: false, error: "Application not found." };
+  }
+
+  revalidatePath("/");
+  return { success: true, data: application };
+}
+
+export async function logStage(
+  applicationId: string,
+  stage: Stage,
+  date: string
+): Promise<ActionResult<Application>> {
+  const userId = await getUserId();
+
+  if (!isUuid(applicationId)) {
+    return { success: false, error: "Application not found." };
+  }
+
+  if (!isStage(stage)) {
+    return { success: false, error: "Invalid stage." };
+  }
+
+  if (!DATE_RE.test(date)) {
+    return { success: false, error: "Date must be YYYY-MM-DD." };
+  }
+
+  const existing = await ownedApplication(userId, applicationId);
+  if (!existing) {
+    return { success: false, error: "Application not found." };
+  }
+
+  const history = existing.stageEvents ?? [];
+  const last = history[history.length - 1];
+  if (last?.stage === stage) {
+    return {
+      success: false,
+      error: "That stage is already the latest event.",
+    };
+  }
+
+  const stageEvents: StageEvent[] = [...history, { stage, date }];
+  const currentStage = furthestStage(stageEvents, existing.currentStage);
+
+  const [application] = await db
+    .update(applications)
+    .set({
+      stageEvents,
+      currentStage,
+      updatedAt: new Date(),
+    })
+    .where(
+      and(eq(applications.id, applicationId), eq(applications.userId, userId))
+    )
+    .returning();
+
+  if (!application) {
+    return { success: false, error: "Application not found." };
+  }
+
+  revalidatePath("/");
+  return { success: true, data: application };
+}
+
+export async function setOutcome(
+  applicationId: string,
+  outcome: Outcome | null
+): Promise<ActionResult<Application>> {
+  const userId = await getUserId();
+
+  if (!isUuid(applicationId)) {
+    return { success: false, error: "Application not found." };
+  }
+
+  if (outcome !== null && !isOutcome(outcome)) {
+    return { success: false, error: "Invalid outcome." };
+  }
+
+  const existing = await ownedApplication(userId, applicationId);
+  if (!existing) {
+    return { success: false, error: "Application not found." };
+  }
+
+  if (
+    outcome &&
+    isOfferOnlyOutcome(outcome) &&
+    !hasReachedOffer(existing.stageEvents ?? [], existing.currentStage)
+  ) {
+    return {
+      success: false,
+      error: "Accepted and Declined can only be set after an Offer.",
+    };
+  }
+
+  const [application] = await db
+    .update(applications)
+    .set({
+      outcome,
+      updatedAt: new Date(),
+    })
+    .where(
+      and(eq(applications.id, applicationId), eq(applications.userId, userId))
+    )
+    .returning();
+
+  if (!application) {
+    return { success: false, error: "Application not found." };
+  }
+
+  revalidatePath("/");
+  return { success: true, data: application };
+}
+
+export async function editStageHistory(
+  applicationId: string,
+  events: StageEvent[]
+): Promise<ActionResult<Application>> {
+  const userId = await getUserId();
+
+  if (!isUuid(applicationId)) {
+    return { success: false, error: "Application not found." };
+  }
+
+  const existing = await ownedApplication(userId, applicationId);
+  if (!existing) {
+    return { success: false, error: "Application not found." };
+  }
+
+  const parsed = validateStageEvents(events);
+  if (!parsed.ok) {
+    return { success: false, error: parsed.error };
+  }
+
+  if (
+    existing.outcome &&
+    isOfferOnlyOutcome(existing.outcome) &&
+    !hasReachedOffer(parsed.events, parsed.currentStage)
+  ) {
+    return {
+      success: false,
+      error: "Remove Accepted or Declined before dropping Offer from history.",
+    };
+  }
+
+  const [application] = await db
+    .update(applications)
+    .set({
+      stageEvents: parsed.events,
+      currentStage: parsed.currentStage,
+      updatedAt: new Date(),
+    })
+    .where(
+      and(eq(applications.id, applicationId), eq(applications.userId, userId))
+    )
     .returning();
 
   if (!application) {

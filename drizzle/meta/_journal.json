@@ -8,6 +8,13 @@
       "when": 1787160582726,
       "tag": "0000_steady_strong_guy",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1787161512959,
+      "tag": "0001_curved_archangel",
+      "breakpoints": true
     }
   ]
 }

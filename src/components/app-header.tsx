@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { NewCycleDialog } from "@/components/new-cycle-dialog";
 import { SignOutButton } from "@/components/sign-out-button";
+import type { AppView } from "@/lib/views";
 import {
   Select,
   SelectContent,
@@ -24,7 +25,7 @@ type CycleOption = {
 type AppHeaderProps = {
   cycles: CycleOption[];
   selectedCycleId: string | null;
-  view?: "table" | "board" | "insights";
+  view?: AppView;
 };
 
 export function AppHeader({

@@ -1,6 +1,6 @@
 import "server-only";
 
-import { and, count, desc, eq } from "drizzle-orm";
+import { and, desc, eq } from "drizzle-orm";
 import { getUserId } from "@/lib/auth/session";
 import { db } from "@/lib/db";
 import {
@@ -8,23 +8,34 @@ import {
   cycles,
   type Application,
   type Cycle,
-  statusEnum,
 } from "@/lib/db/schema";
-
-export type ApplicationStatus = (typeof statusEnum.enumValues)[number];
+import {
+  furthestStage,
+  INTERVIEW_STAGES,
+  isNegativeOutcome,
+} from "@/lib/stages";
 
 export type ApplicationStats = {
   total: number;
-  byStatus: Record<ApplicationStatus, number>;
+  active: number;
+  reachedInterview: number;
+  offers: number;
+  accepted: number;
+  rejected: number;
+  noReply: number;
 };
 
-const EMPTY_STATUS_COUNTS: Record<ApplicationStatus, number> = {
-  Applied: 0,
-  "OA/Assessment": 0,
-  Interviewing: 0,
-  Offer: 0,
-  Rejected: 0,
+const EMPTY_STATS: ApplicationStats = {
+  total: 0,
+  active: 0,
+  reachedInterview: 0,
+  offers: 0,
+  accepted: 0,
+  rejected: 0,
+  noReply: 0,
 };
+
+const INTERVIEW_STAGE_SET = new Set<string>(INTERVIEW_STAGES);
 
 async function getOwnedCycle(userId: string, cycleId: string) {
   const [cycle] = await db
@@ -82,27 +93,53 @@ export async function getApplicationStats(
   const cycle = await getOwnedCycle(userId, cycleId);
 
   if (!cycle) {
-    return { total: 0, byStatus: { ...EMPTY_STATUS_COUNTS } };
+    return { ...EMPTY_STATS };
   }
 
   const rows = await db
     .select({
-      status: applications.status,
-      count: count(),
+      currentStage: applications.currentStage,
+      outcome: applications.outcome,
+      stageEvents: applications.stageEvents,
     })
     .from(applications)
     .where(
       and(eq(applications.userId, userId), eq(applications.cycleId, cycleId))
-    )
-    .groupBy(applications.status);
+    );
 
-  const byStatus = { ...EMPTY_STATUS_COUNTS };
-  let total = 0;
+  const stats = { ...EMPTY_STATS };
+  stats.total = rows.length;
 
   for (const row of rows) {
-    byStatus[row.status] = row.count;
-    total += row.count;
+    const furthest = furthestStage(row.stageEvents ?? [], row.currentStage);
+
+    if (row.outcome == null) {
+      stats.active += 1;
+    }
+
+    if (
+      INTERVIEW_STAGE_SET.has(furthest) &&
+      !(row.outcome && isNegativeOutcome(row.outcome))
+    ) {
+      stats.reachedInterview += 1;
+    }
+
+    if (furthest === "Offer") {
+      stats.offers += 1;
+    }
+
+    if (row.outcome === "Accepted") {
+      stats.accepted += 1;
+    }
+
+    if (row.outcome === "Rejected") {
+      stats.rejected += 1;
+    }
+
+    if (row.outcome === "No Reply") {
+      stats.noReply += 1;
+    }
   }
 
-  return { total, byStatus };
+  return stats;
 }

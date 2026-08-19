@@ -15,6 +15,7 @@ import {
   type TooltipValueType,
 } from "recharts";
 import type { ApplicationFormRecord } from "@/components/application-form";
+import { SankeyChart } from "@/components/sankey-chart";
 import {
   Card,
   CardContent,
@@ -25,10 +26,13 @@ import {
 import {
   PRIORITIES,
   PRIORITY_CONFIG,
-  STATUSES,
-  STATUS_CONFIG,
-  type Status,
 } from "@/lib/status";
+import {
+  furthestStage,
+  STAGE_CONFIG,
+  STAGES,
+  type Stage,
+} from "@/lib/stages";
 
 type InsightsViewProps = {
   applications: ApplicationFormRecord[];
@@ -99,18 +103,18 @@ export function InsightsView({ applications }: InsightsViewProps) {
       <div className="flex flex-col items-center justify-center rounded-xl border bg-card px-6 py-16 text-center">
         <p className="text-sm font-medium">No data yet for this cycle</p>
         <p className="mt-1 max-w-sm text-sm text-muted-foreground">
-          Add applications to see status, pace, and priority insights.
+          Add applications to see stage, pace, and priority insights.
         </p>
       </div>
     );
   }
 
   const total = applications.length;
-  let appliedCount = 0;
+  let appliedOnly = 0;
   let activeCount = 0;
   let offerCount = 0;
-  const statusCounts = Object.fromEntries(STATUSES.map((status) => [status, 0])) as Record<
-    Status,
+  const stageCounts = Object.fromEntries(STAGES.map((stage) => [stage, 0])) as Record<
+    Stage,
     number
   >;
   const priorityCounts = {
@@ -123,19 +127,16 @@ export function InsightsView({ applications }: InsightsViewProps) {
   let latestWeek: Date | null = null;
 
   for (const application of applications) {
-    statusCounts[application.status] += 1;
+    stageCounts[application.currentStage] += 1;
     priorityCounts[application.priority] += 1;
 
-    if (application.status === "Applied") {
-      appliedCount += 1;
+    if (application.currentStage === "Applied" && application.outcome == null) {
+      appliedOnly += 1;
     }
-    if (
-      application.status === "OA/Assessment" ||
-      application.status === "Interviewing"
-    ) {
+    if (application.outcome == null) {
       activeCount += 1;
     }
-    if (application.status === "Offer") {
+    if (furthestStage(application.stageEvents, application.currentStage) === "Offer") {
       offerCount += 1;
     }
 
@@ -156,12 +157,12 @@ export function InsightsView({ applications }: InsightsViewProps) {
     }
   }
 
-  const responseRate = Math.round(((total - appliedCount) / total) * 100);
+  const responseRate = Math.round(((total - appliedOnly) / total) * 100);
 
-  const statusData = STATUSES.map((status) => ({
-    name: STATUS_CONFIG[status].label,
-    value: statusCounts[status],
-    fill: STATUS_CONFIG[status].chartColor,
+  const stageData = STAGES.map((stage) => ({
+    name: STAGE_CONFIG[stage].label,
+    value: stageCounts[stage],
+    fill: STAGE_CONFIG[stage].chartColor,
   }));
 
   const weeklyData =
@@ -181,6 +182,7 @@ export function InsightsView({ applications }: InsightsViewProps) {
 
   return (
     <div className="grid gap-4">
+      <SankeyChart applications={applications} />
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         <Card size="sm">
           <CardHeader>
@@ -197,7 +199,7 @@ export function InsightsView({ applications }: InsightsViewProps) {
               {activeCount}
             </CardTitle>
             <p className="text-xs text-muted-foreground">
-              OA/Assessment or Interviewing
+              No outcome set
             </p>
           </CardHeader>
         </Card>
@@ -216,7 +218,7 @@ export function InsightsView({ applications }: InsightsViewProps) {
               {responseRate}%
             </CardTitle>
             <p className="text-xs text-muted-foreground">
-              (total − Applied) / total, including rejections
+              (total − Applied with no outcome) / total
             </p>
           </CardHeader>
         </Card>
@@ -225,15 +227,15 @@ export function InsightsView({ applications }: InsightsViewProps) {
       <div className="grid gap-4 lg:grid-cols-5">
         <Card className="lg:col-span-2">
           <CardHeader>
-            <CardTitle>Status breakdown</CardTitle>
-            <CardDescription>Applications in this cycle by status</CardDescription>
+            <CardTitle>Stage breakdown</CardTitle>
+            <CardDescription>Applications in this cycle by current stage</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="h-64">
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
                   <Pie
-                    data={statusData}
+                    data={stageData}
                     dataKey="value"
                     nameKey="name"
                     innerRadius="58%"
@@ -242,7 +244,7 @@ export function InsightsView({ applications }: InsightsViewProps) {
                     stroke="var(--card)"
                     strokeWidth={2}
                   >
-                    {statusData.map((entry) => (
+                    {stageData.map((entry) => (
                       <Cell key={entry.name} fill={entry.fill} />
                     ))}
                   </Pie>
@@ -254,7 +256,7 @@ export function InsightsView({ applications }: InsightsViewProps) {
               </ResponsiveContainer>
             </div>
             <ul className="flex flex-wrap gap-x-4 gap-y-1.5 text-xs">
-              {statusData.map((entry) => (
+              {stageData.map((entry) => (
                 <li key={entry.name} className="flex items-center gap-1.5">
                   <span
                     className="size-2 shrink-0 rounded-full"
@@ -305,7 +307,7 @@ export function InsightsView({ applications }: InsightsViewProps) {
                   />
                   <Bar
                     dataKey="count"
-                    fill={STATUS_CONFIG.Applied.chartColor}
+                    fill={STAGE_CONFIG.Applied.chartColor}
                     radius={[6, 6, 0, 0]}
                     maxBarSize={48}
                   />

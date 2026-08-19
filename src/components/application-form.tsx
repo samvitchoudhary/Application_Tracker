@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
+import { useState, type FormEvent, type ReactNode } from "react";
 import {
   createApplication,
   updateApplication,
@@ -16,14 +16,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import {
-  PRIORITIES,
-  PRIORITY_CONFIG,
-  STATUSES,
-  STATUS_CONFIG,
-  type Priority,
-  type Status,
-} from "@/lib/status";
+import { PRIORITIES, PRIORITY_CONFIG, type Priority } from "@/lib/status";
+import type { Outcome, Stage, StageEvent } from "@/lib/stages";
 
 export type ApplicationFormRecord = {
   id: string;
@@ -32,7 +26,9 @@ export type ApplicationFormRecord = {
   locations: string | null;
   link: string | null;
   dateApplied: string;
-  status: Status;
+  currentStage: Stage;
+  outcome: Outcome | null;
+  stageEvents: StageEvent[];
   priority: Priority;
   notes: string | null;
 };
@@ -40,8 +36,8 @@ export type ApplicationFormRecord = {
 type ApplicationFormProps = {
   cycleId: string;
   application?: ApplicationFormRecord;
-  defaultStatus?: Status;
-  onDone: () => void;
+  onDone: () => void | Promise<void>;
+  children?: ReactNode;
 };
 
 function todayIsoDate() {
@@ -59,8 +55,8 @@ function toDateInputValue(value: string) {
 export function ApplicationForm({
   cycleId,
   application,
-  defaultStatus = "Applied",
   onDone,
+  children,
 }: ApplicationFormProps) {
   const isEdit = Boolean(application);
   const [company, setCompany] = useState(application?.company ?? "");
@@ -71,9 +67,6 @@ export function ApplicationForm({
     application?.dateApplied
       ? toDateInputValue(application.dateApplied)
       : todayIsoDate()
-  );
-  const [status, setStatus] = useState<Status>(
-    application?.status ?? defaultStatus
   );
   const [priority, setPriority] = useState<Priority>(
     application?.priority ?? "Medium"
@@ -94,7 +87,6 @@ export function ApplicationForm({
       locations: locations.trim() ? locations : null,
       link: link.trim() ? link : null,
       dateApplied,
-      status,
       priority,
       notes: notes.trim() ? notes : null,
     };
@@ -103,14 +95,17 @@ export function ApplicationForm({
       ? await updateApplication(application.id, payload)
       : await createApplication(payload);
 
-    setPending(false);
-
     if (!result.success) {
+      setPending(false);
       setError(result.error);
       return;
     }
 
-    onDone();
+    try {
+      await onDone();
+    } finally {
+      setPending(false);
+    }
   }
 
   return (
@@ -170,24 +165,6 @@ export function ApplicationForm({
           />
         </div>
         <div className="grid gap-1.5">
-          <Label htmlFor="status">Status</Label>
-          <Select
-            value={status}
-            onValueChange={(value) => setStatus(value as Status)}
-          >
-            <SelectTrigger id="status" className="w-full">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent position="popper">
-              {STATUSES.map((value) => (
-                <SelectItem key={value} value={value}>
-                  {STATUS_CONFIG[value].label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-        <div className="grid gap-1.5 sm:col-span-2">
           <Label htmlFor="priority">Priority</Label>
           <Select
             value={priority}
@@ -216,6 +193,7 @@ export function ApplicationForm({
           rows={4}
         />
       </div>
+      {children}
       {error ? (
         <p className="text-sm text-destructive" role="alert">
           {error}

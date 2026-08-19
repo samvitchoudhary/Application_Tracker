@@ -9,17 +9,16 @@ import {
   getApplications,
   getCycles,
 } from "@/lib/data";
+import { parseAppView } from "@/lib/views";
 
 export const dynamic = "force-dynamic";
 
-function parseView(
-  value: string | string[] | undefined
-): "table" | "board" | "insights" | undefined {
+function parseView(value: string | string[] | undefined) {
   const view = Array.isArray(value) ? value[0] : value;
-  if (view === "table" || view === "board" || view === "insights") {
-    return view;
+  if (!view) {
+    return undefined;
   }
-  return undefined;
+  return parseAppView(view);
 }
 
 export default async function Home({ searchParams }: PageProps<"/">) {

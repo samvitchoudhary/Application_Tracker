@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import type { AppView } from "@/lib/views";
 
 function suggestedCycleName() {
   return `${new Date().getFullYear()} Recruiting Cycle`;
@@ -21,7 +22,7 @@ function suggestedCycleName() {
 type NewCycleDialogProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  view?: "table" | "board" | "insights";
+  view?: AppView;
 };
 
 export function NewCycleDialog({
@@ -107,7 +108,7 @@ export function NewCycleDialog({
 export function EmptyCyclesPrompt({
   view,
 }: {
-  view?: "table" | "board" | "insights";
+  view?: AppView;
 }) {
   const [open, setOpen] = useState(false);
 
