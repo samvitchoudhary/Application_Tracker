@@ -2,7 +2,6 @@ import {
   isOutcome,
   isStage,
   OUTCOME_CONFIG,
-  OUTCOMES,
   STAGE_CONFIG,
   STAGES,
   type Outcome,
@@ -114,7 +113,17 @@ export function buildSankeyData(
     }
   }
 
-  for (const outcome of OUTCOMES) {
+  // Small terminals first, Ghosted/Rejected last so sort:"input" clusters
+  // the large bands at the bottom of the outcome column.
+  const outcomeOrder = [
+    "Accepted",
+    "Declined",
+    "Withdrew",
+    "Ghosted",
+    "Rejected",
+  ] as const;
+
+  for (const outcome of outcomeOrder) {
     if (usedIds.has(outcome)) {
       nodes.push({ id: outcome, nodeColor: nodeColor(outcome) });
     }

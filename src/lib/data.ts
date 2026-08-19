@@ -22,7 +22,7 @@ export type ApplicationStats = {
   offers: number;
   accepted: number;
   rejected: number;
-  noReply: number;
+  ghosted: number;
 };
 
 const EMPTY_STATS: ApplicationStats = {
@@ -32,7 +32,7 @@ const EMPTY_STATS: ApplicationStats = {
   offers: 0,
   accepted: 0,
   rejected: 0,
-  noReply: 0,
+  ghosted: 0,
 };
 
 const INTERVIEW_STAGE_SET = new Set<string>(INTERVIEW_STAGES);
@@ -136,8 +136,8 @@ export async function getApplicationStats(
       stats.rejected += 1;
     }
 
-    if (row.outcome === "No Reply") {
-      stats.noReply += 1;
+    if (row.outcome === "Ghosted") {
+      stats.ghosted += 1;
     }
   }
 

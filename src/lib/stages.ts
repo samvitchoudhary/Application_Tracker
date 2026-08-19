@@ -26,7 +26,7 @@ export const INTERVIEW_STAGES = [
   "Third Interview",
 ] as const;
 
-export const NEGATIVE_OUTCOMES = ["No Reply", "Rejected", "Withdrew"] as const;
+export const NEGATIVE_OUTCOMES = ["Ghosted", "Rejected", "Withdrew"] as const;
 
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 
@@ -123,7 +123,7 @@ export function validateStageEvents(
 }
 
 export const OUTCOMES = [
-  "No Reply",
+  "Ghosted",
   "Rejected",
   "Withdrew",
   "Accepted",
@@ -186,8 +186,8 @@ export const STAGE_CONFIG: Record<Stage, AccentClasses> = {
 };
 
 export const OUTCOME_CONFIG: Record<Outcome, AccentClasses> = {
-  "No Reply": {
-    label: "No Reply",
+  Ghosted: {
+    label: "Ghosted",
     className:
       "border-slate-200 bg-slate-50 text-slate-700 dark:border-slate-700 dark:bg-slate-900/40 dark:text-slate-300",
     chartColor: "#94a3b8",

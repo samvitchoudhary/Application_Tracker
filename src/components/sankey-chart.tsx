@@ -1,6 +1,7 @@
 "use client";
 
 import { ResponsiveSankey } from "@nivo/sankey";
+import type { DefaultLink, SankeyNodeDatum } from "@nivo/sankey";
 import {
   Card,
   CardContent,
@@ -12,11 +13,14 @@ import {
   buildSankeyData,
   hasStageToStageFlow,
   type SankeyApplication,
+  type SankeyNode,
 } from "@/lib/sankey";
 
 type SankeyChartProps = {
   applications: SankeyApplication[];
 };
+
+const LARGE_TERMINALS = new Set(["Rejected", "Ghosted"]);
 
 const THEME = {
   labels: {
@@ -38,6 +42,20 @@ const THEME = {
   },
 };
 
+function sortNodes(
+  a: SankeyNodeDatum<SankeyNode, DefaultLink>,
+  b: SankeyNodeDatum<SankeyNode, DefaultLink>
+) {
+  const aLarge = LARGE_TERMINALS.has(a.id) ? 1 : 0;
+  const bLarge = LARGE_TERMINALS.has(b.id) ? 1 : 0;
+
+  if (aLarge !== bLarge) {
+    return aLarge - bLarge;
+  }
+
+  return b.value - a.value;
+}
+
 export function SankeyChart({ applications }: SankeyChartProps) {
   const data = buildSankeyData(applications);
   const sparse = applications.length > 0 && !hasStageToStageFlow(data);
@@ -57,28 +75,30 @@ export function SankeyChart({ applications }: SankeyChartProps) {
         ) : null}
       </CardHeader>
       <CardContent>
-        <div className="h-[420px]">
+        <div className="h-[600px]">
           {data.links.length > 0 ? (
-            <ResponsiveSankey
+            <ResponsiveSankey<SankeyNode, DefaultLink>
               data={data}
-              margin={{ top: 12, right: 128, bottom: 12, left: 12 }}
+              margin={{ top: 20, right: 152, bottom: 20, left: 104 }}
               align="justify"
-              sort="input"
+              sort={sortNodes}
               colors={(node) => node.nodeColor}
               nodeOpacity={1}
-              nodeThickness={14}
-              nodeSpacing={18}
-              nodeBorderWidth={1}
+              nodeHoverOpacity={1}
+              nodeHoverOthersOpacity={1}
+              nodeThickness={16}
+              nodeSpacing={36}
+              nodeBorderWidth={2}
               nodeBorderColor="#ffffff"
-              nodeBorderRadius={3}
-              linkOpacity={0.28}
-              linkHoverOpacity={0.65}
+              nodeBorderRadius={4}
+              linkOpacity={0.35}
+              linkHoverOpacity={0.7}
               linkHoverOthersOpacity={0.08}
               linkBlendMode="normal"
               enableLinkGradient
               label={(node) => `${node.id} (${node.value})`}
               labelPosition="outside"
-              labelPadding={8}
+              labelPadding={12}
               labelTextColor="#334155"
               theme={THEME}
             />
