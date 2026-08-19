@@ -26,7 +26,7 @@ export const INTERVIEW_STAGES = [
   "Third Interview",
 ] as const;
 
-export const NEGATIVE_OUTCOMES = ["Ghosted", "Rejected", "Withdrew"] as const;
+export const NEGATIVE_OUTCOMES = ["Ghosted", "Rejected"] as const;
 
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 
@@ -122,18 +122,12 @@ export function validateStageEvents(
   };
 }
 
-export const OUTCOMES = [
-  "Ghosted",
-  "Rejected",
-  "Withdrew",
-  "Accepted",
-  "Declined",
-] as const;
+export const OUTCOMES = ["Rejected", "Ghosted", "Accepted"] as const;
 
 export type Outcome = (typeof OUTCOMES)[number];
 
-/** Accepted and Declined are only valid after currentStage is Offer. */
-export const OFFER_ONLY_OUTCOMES = ["Accepted", "Declined"] as const;
+/** Accepted is only valid after currentStage is Offer. */
+export const OFFER_ONLY_OUTCOMES = ["Accepted"] as const;
 
 export type StageEvent = {
   stage: string;
@@ -198,22 +192,10 @@ export const OUTCOME_CONFIG: Record<Outcome, AccentClasses> = {
       "border-rose-200 bg-rose-50 text-rose-800 dark:border-rose-800 dark:bg-rose-950/40 dark:text-rose-300",
     chartColor: "#f43f5e",
   },
-  Withdrew: {
-    label: "Withdrew",
-    className:
-      "border-slate-300 bg-slate-100 text-slate-800 dark:border-slate-600 dark:bg-slate-800/60 dark:text-slate-200",
-    chartColor: "#64748b",
-  },
   Accepted: {
     label: "Accepted",
     className:
       "border-green-200 bg-green-50 text-green-800 dark:border-green-800 dark:bg-green-950/40 dark:text-green-300",
     chartColor: "#22c55e",
-  },
-  Declined: {
-    label: "Declined",
-    className:
-      "border-amber-200 bg-amber-50 text-amber-800 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-300",
-    chartColor: "#d97706",
   },
 };

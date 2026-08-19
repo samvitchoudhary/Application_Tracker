@@ -115,13 +115,7 @@ export function buildSankeyData(
 
   // Small terminals first, Ghosted/Rejected last so sort:"input" clusters
   // the large bands at the bottom of the outcome column.
-  const outcomeOrder = [
-    "Accepted",
-    "Declined",
-    "Withdrew",
-    "Ghosted",
-    "Rejected",
-  ] as const;
+  const outcomeOrder = ["Accepted", "Ghosted", "Rejected"] as const;
 
   for (const outcome of outcomeOrder) {
     if (usedIds.has(outcome)) {

@@ -387,7 +387,7 @@ export async function setOutcome(
   ) {
     return {
       success: false,
-      error: "Accepted and Declined can only be set after an Offer.",
+      error: "Accepted can only be set after an Offer.",
     };
   }
 
@@ -437,7 +437,7 @@ export async function editStageHistory(
   ) {
     return {
       success: false,
-      error: "Remove Accepted or Declined before dropping Offer from history.",
+      error: "Remove Accepted before dropping Offer from history.",
     };
   }
 
