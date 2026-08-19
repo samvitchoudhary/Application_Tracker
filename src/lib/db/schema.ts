@@ -10,7 +10,7 @@ import {
   timestamp,
   uuid,
 } from "drizzle-orm/pg-core";
-import { OUTCOMES, STAGES, type StageEvent } from "../stages";
+import { OUTCOMES, STAGES } from "../stages";
 
 export const statusEnum = pgEnum("status", [
   "Applied",
@@ -55,7 +55,7 @@ export const applications = pgTable(
     currentStage: stageEnum("current_stage").notNull().default("Applied"),
     outcome: outcomeEnum("outcome"),
     stageEvents: jsonb("stage_events")
-      .$type<StageEvent[]>()
+      .$type<{ stage: string; date: string }[]>()
       .notNull()
       .default(sql`'[]'::jsonb`),
     priority: priorityEnum("priority").notNull().default("Medium"),

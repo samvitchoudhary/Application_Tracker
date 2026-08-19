@@ -10,9 +10,6 @@ import {
   type StageEvent,
 } from "@/lib/stages";
 
-export const IN_PROGRESS_NODE = "In Progress";
-export const IN_PROGRESS_COLOR = "#64748b";
-
 export type SankeyApplication = {
   stageEvents: StageEvent[];
   currentStage: Stage;
@@ -36,10 +33,6 @@ export type SankeyData = {
 };
 
 function nodeColor(id: string): string {
-  if (id === IN_PROGRESS_NODE) {
-    return IN_PROGRESS_COLOR;
-  }
-
   if (isStage(id)) {
     return STAGE_CONFIG[id].chartColor;
   }
@@ -48,7 +41,7 @@ function nodeColor(id: string): string {
     return OUTCOME_CONFIG[id].chartColor;
   }
 
-  return IN_PROGRESS_COLOR;
+  return STAGE_CONFIG.Applied.chartColor;
 }
 
 function reachedStages(application: SankeyApplication): Stage[] {
@@ -102,8 +95,6 @@ export function buildSankeyData(
 
     if (application.outcome && isOutcome(application.outcome)) {
       addLink(furthest, application.outcome);
-    } else {
-      addLink(furthest, IN_PROGRESS_NODE);
     }
   }
 
@@ -121,10 +112,6 @@ export function buildSankeyData(
     if (usedIds.has(stage)) {
       nodes.push({ id: stage, nodeColor: nodeColor(stage) });
     }
-  }
-
-  if (usedIds.has(IN_PROGRESS_NODE)) {
-    nodes.push({ id: IN_PROGRESS_NODE, nodeColor: IN_PROGRESS_COLOR });
   }
 
   for (const outcome of OUTCOMES) {

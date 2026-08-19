@@ -78,6 +78,27 @@ function requiredText(
   return { ok: true, value: trimmed };
 }
 
+function dbErrorMessage(error: unknown, fallback: string): string {
+  if (error && typeof error === "object") {
+    const withCause = error as { cause?: unknown; message?: string };
+    if (withCause.cause instanceof Error && withCause.cause.message) {
+      return withCause.cause.message;
+    }
+    if (typeof withCause.message === "string" && withCause.message.length > 0) {
+      return withCause.message;
+    }
+  }
+
+  return fallback;
+}
+
+function asStageEvents(events: StageEvent[]): StageEvent[] {
+  return events.map((event) => ({
+    stage: event.stage,
+    date: event.date,
+  }));
+}
+
 function optionalText(value: unknown) {
   if (value == null) {
     return null;
@@ -153,7 +174,7 @@ function parseApplicationWrite(
       dateApplied,
       currentStage: "Applied",
       outcome: null,
-      stageEvents: [{ stage: "Applied", date: dateApplied }],
+      stageEvents: asStageEvents([{ stage: "Applied", date: dateApplied }]),
       ...(data.priority ? { priority: data.priority } : {}),
     },
   };
@@ -174,17 +195,24 @@ export async function createApplication(
     return { success: false, error: "Cycle not found." };
   }
 
-  const [application] = await db
-    .insert(applications)
-    .values({ ...parsed.values, userId })
-    .returning();
+  try {
+    const [application] = await db
+      .insert(applications)
+      .values({ ...parsed.values, userId })
+      .returning();
 
-  if (!application) {
-    return { success: false, error: "Failed to create application." };
+    if (!application) {
+      return { success: false, error: "Failed to create application." };
+    }
+
+    revalidatePath("/");
+    return { success: true, data: application };
+  } catch (error) {
+    return {
+      success: false,
+      error: dbErrorMessage(error, "Failed to create application."),
+    };
   }
-
-  revalidatePath("/");
-  return { success: true, data: application };
 }
 
 export async function updateApplication(
@@ -303,27 +331,34 @@ export async function logStage(
     };
   }
 
-  const stageEvents: StageEvent[] = [...history, { stage, date }];
+  const stageEvents = asStageEvents([...history, { stage, date }]);
   const currentStage = furthestStage(stageEvents, existing.currentStage);
 
-  const [application] = await db
-    .update(applications)
-    .set({
-      stageEvents,
-      currentStage,
-      updatedAt: new Date(),
-    })
-    .where(
-      and(eq(applications.id, applicationId), eq(applications.userId, userId))
-    )
-    .returning();
+  try {
+    const [application] = await db
+      .update(applications)
+      .set({
+        stageEvents,
+        currentStage,
+        updatedAt: new Date(),
+      })
+      .where(
+        and(eq(applications.id, applicationId), eq(applications.userId, userId))
+      )
+      .returning();
 
-  if (!application) {
-    return { success: false, error: "Application not found." };
+    if (!application) {
+      return { success: false, error: "Application not found." };
+    }
+
+    revalidatePath("/");
+    return { success: true, data: application };
+  } catch (error) {
+    return {
+      success: false,
+      error: dbErrorMessage(error, "Failed to log stage."),
+    };
   }
-
-  revalidatePath("/");
-  return { success: true, data: application };
 }
 
 export async function setOutcome(
@@ -406,24 +441,31 @@ export async function editStageHistory(
     };
   }
 
-  const [application] = await db
-    .update(applications)
-    .set({
-      stageEvents: parsed.events,
-      currentStage: parsed.currentStage,
-      updatedAt: new Date(),
-    })
-    .where(
-      and(eq(applications.id, applicationId), eq(applications.userId, userId))
-    )
-    .returning();
+  try {
+    const [application] = await db
+      .update(applications)
+      .set({
+        stageEvents: asStageEvents(parsed.events),
+        currentStage: parsed.currentStage,
+        updatedAt: new Date(),
+      })
+      .where(
+        and(eq(applications.id, applicationId), eq(applications.userId, userId))
+      )
+      .returning();
 
-  if (!application) {
-    return { success: false, error: "Application not found." };
+    if (!application) {
+      return { success: false, error: "Application not found." };
+    }
+
+    revalidatePath("/");
+    return { success: true, data: application };
+  } catch (error) {
+    return {
+      success: false,
+      error: dbErrorMessage(error, "Failed to update stage history."),
+    };
   }
-
-  revalidatePath("/");
-  return { success: true, data: application };
 }
 
 export async function deleteApplication(

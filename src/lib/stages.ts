@@ -115,15 +115,6 @@ export function validateStageEvents(
 
   const sorted = sortStageEvents(normalized);
 
-  for (let i = 1; i < sorted.length; i += 1) {
-    if (sorted[i].stage === sorted[i - 1].stage) {
-      return {
-        ok: false,
-        error: "Consecutive identical stages are not allowed.",
-      };
-    }
-  }
-
   return {
     ok: true,
     events: sorted,

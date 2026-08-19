@@ -295,10 +295,6 @@ export function PipelineTable({ applications, cycleId }: PipelineTableProps) {
         return false;
       }
 
-      if (outcomeFilter === "in-progress") {
-        return application.outcome == null;
-      }
-
       if (outcomeFilter !== "all") {
         return application.outcome === outcomeFilter;
       }
@@ -423,7 +419,6 @@ export function PipelineTable({ applications, cycleId }: PipelineTableProps) {
           </SelectTrigger>
           <SelectContent position="popper">
             <SelectItem value="all">All outcomes</SelectItem>
-            <SelectItem value="in-progress">In progress / no outcome</SelectItem>
             {OUTCOMES.map((outcome) => (
               <SelectItem key={outcome} value={outcome}>
                 {OUTCOME_CONFIG[outcome].label}
