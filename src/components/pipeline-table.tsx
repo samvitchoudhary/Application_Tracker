@@ -51,14 +51,6 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
-  Popover,
-  PopoverAnchor,
-  PopoverContent,
-  PopoverDescription,
-  PopoverHeader,
-  PopoverTitle,
-} from "@/components/ui/popover";
-import {
   Select,
   SelectContent,
   SelectItem,
@@ -73,6 +65,11 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import {
   furthestStage,
   hasReachedOffer,
@@ -195,84 +192,58 @@ function StageHistoryEditor({
   );
 }
 
-function LogStagePopover({
+function LogNextStageMenuItem({
   application,
-  onClose,
+  pending,
+  onLog,
 }: {
   application: ApplicationFormRecord;
-  onClose: () => void;
+  pending: boolean;
+  onLog: (application: ApplicationFormRecord, stage: Stage) => void;
 }) {
-  const router = useRouter();
-  const defaultStage = nextStage(application.currentStage) ?? application.currentStage;
-  const [stage, setStage] = useState<Stage>(defaultStage);
-  const [date, setDate] = useState(todayIsoDate);
-  const [error, setError] = useState<string | null>(null);
-  const [pending, setPending] = useState(false);
+  const next = nextStage(application.currentStage);
+  const isClosed = application.outcome !== null;
+  const atLastStage = next === null;
+  const disabled = isClosed || atLastStage || pending;
+  const label = next
+    ? pending
+      ? "Logging..."
+      : `Log next stage → ${STAGE_CONFIG[next].label}`
+    : "Log next stage";
+  const disabledReason = isClosed
+    ? "Application is closed"
+    : atLastStage
+      ? "Already at Offer"
+      : null;
 
-  async function onSubmit() {
-    setError(null);
-    setPending(true);
-    const result = await logStage(application.id, stage, date);
-    setPending(false);
+  const item = (
+    <DropdownMenuItem
+      disabled={disabled}
+      onSelect={(event) => {
+        if (disabled || !next) {
+          event.preventDefault();
+          return;
+        }
+        event.preventDefault();
+        onLog(application, next);
+      }}
+    >
+      {label}
+    </DropdownMenuItem>
+  );
 
-    if (!result.success) {
-      setError(result.error);
-      return;
-    }
-
-    onClose();
-    router.refresh();
+  if (disabledReason) {
+    return (
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <span className="block w-full">{item}</span>
+        </TooltipTrigger>
+        <TooltipContent side="left">{disabledReason}</TooltipContent>
+      </Tooltip>
+    );
   }
 
-  return (
-    <PopoverContent align="end" className="w-72">
-      <PopoverHeader>
-        <PopoverTitle>Log stage</PopoverTitle>
-        <PopoverDescription>
-          Defaults to the next step after {application.currentStage}.
-        </PopoverDescription>
-      </PopoverHeader>
-      <div className="grid gap-2">
-        <div className="grid gap-1.5">
-          <Label htmlFor={`log-stage-${application.id}`}>Stage</Label>
-          <Select value={stage} onValueChange={(value) => setStage(value as Stage)}>
-            <SelectTrigger id={`log-stage-${application.id}`} className="w-full">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent position="popper">
-              {STAGES.map((value) => (
-                <SelectItem key={value} value={value}>
-                  {STAGE_CONFIG[value].label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-        <div className="grid gap-1.5">
-          <Label htmlFor={`log-date-${application.id}`}>Date</Label>
-          <Input
-            id={`log-date-${application.id}`}
-            type="date"
-            value={date}
-            onChange={(event) => setDate(event.target.value)}
-          />
-        </div>
-        {error ? (
-          <p className="text-sm text-destructive" role="alert">
-            {error}
-          </p>
-        ) : null}
-        <div className="flex justify-end gap-2">
-          <Button type="button" variant="ghost" size="sm" onClick={onClose}>
-            Cancel
-          </Button>
-          <Button type="button" size="sm" disabled={pending} onClick={onSubmit}>
-            {pending ? "Saving..." : "Log stage"}
-          </Button>
-        </div>
-      </div>
-    </PopoverContent>
-  );
+  return item;
 }
 
 export function PipelineTable({ applications, cycleId }: PipelineTableProps) {
@@ -281,7 +252,8 @@ export function PipelineTable({ applications, cycleId }: PipelineTableProps) {
   const [editing, setEditing] = useState<ApplicationFormRecord | null>(null);
   const [historyDraft, setHistoryDraft] = useState<StageEvent[]>([]);
   const [deleting, setDeleting] = useState<ApplicationFormRecord | null>(null);
-  const [logging, setLogging] = useState<ApplicationFormRecord | null>(null);
+  const [loggingStageId, setLoggingStageId] = useState<string | null>(null);
+  const [openMenuId, setOpenMenuId] = useState<string | null>(null);
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const [deletePending, setDeletePending] = useState(false);
   const [stageFilter, setStageFilter] = useState<string>("all");
@@ -367,6 +339,23 @@ export function PipelineTable({ applications, cycleId }: PipelineTableProps) {
     }
 
     setDeleting(null);
+    router.refresh();
+  }
+
+  async function handleLogNextStage(
+    application: ApplicationFormRecord,
+    stage: Stage
+  ) {
+    setLoggingStageId(application.id);
+    const result = await logStage(application.id, stage, todayIsoDate());
+    setLoggingStageId(null);
+    setOpenMenuId(null);
+
+    if (!result.success) {
+      toast.error(result.error);
+      return;
+    }
+
     router.refresh();
   }
 
@@ -519,94 +508,83 @@ export function PipelineTable({ applications, cycleId }: PipelineTableProps) {
                       />
                     </TableCell>
                     <TableCell>
-                      <Popover
-                        open={logging?.id === application.id}
+                      <DropdownMenu
+                        open={openMenuId === application.id}
                         onOpenChange={(open) => {
-                          if (!open) {
-                            setLogging(null);
+                          if (open) {
+                            setOpenMenuId(application.id);
+                            return;
+                          }
+
+                          if (loggingStageId !== application.id) {
+                            setOpenMenuId(null);
                           }
                         }}
                       >
-                        <PopoverAnchor asChild>
-                          <div>
-                            <DropdownMenu>
-                              <DropdownMenuTrigger asChild>
-                                <Button
-                                  type="button"
-                                  variant="ghost"
-                                  size="icon-sm"
-                                  aria-label={`Actions for ${application.company}`}
-                                >
-                                  <MoreHorizontalIcon />
-                                </Button>
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end">
-                                <DropdownMenuItem
-                                  onSelect={() => setLogging(application)}
-                                >
-                                  Log next stage
-                                </DropdownMenuItem>
-                                <DropdownMenuSub>
-                                  <DropdownMenuSubTrigger>
-                                    Set outcome
-                                  </DropdownMenuSubTrigger>
-                                  <DropdownMenuSubContent>
-                                    {OUTCOMES.map((outcome) => {
-                                      const offerLocked =
-                                        isOfferOnlyOutcome(outcome) && !reachedOffer;
-
-                                      return (
-                                        <DropdownMenuItem
-                                          key={outcome}
-                                          disabled={offerLocked}
-                                          onSelect={() => {
-                                            void handleSetOutcome(
-                                              application,
-                                              outcome
-                                            );
-                                          }}
-                                        >
-                                          {OUTCOME_CONFIG[outcome].label}
-                                        </DropdownMenuItem>
-                                      );
-                                    })}
-                                    <DropdownMenuSeparator />
-                                    <DropdownMenuItem
-                                      onSelect={() => {
-                                        void handleSetOutcome(application, null);
-                                      }}
-                                    >
-                                      Clear outcome
-                                    </DropdownMenuItem>
-                                  </DropdownMenuSubContent>
-                                </DropdownMenuSub>
-                                <DropdownMenuSeparator />
-                                <DropdownMenuItem
-                                  onSelect={() => openEdit(application)}
-                                >
-                                  Edit
-                                </DropdownMenuItem>
-                                <DropdownMenuItem
-                                  variant="destructive"
-                                  onSelect={() => {
-                                    setDeleteError(null);
-                                    setDeleting(application);
-                                  }}
-                                >
-                                  Delete
-                                </DropdownMenuItem>
-                              </DropdownMenuContent>
-                            </DropdownMenu>
-                          </div>
-                        </PopoverAnchor>
-                        {logging?.id === application.id ? (
-                          <LogStagePopover
-                            key={application.id}
+                        <DropdownMenuTrigger asChild>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon-sm"
+                            aria-label={`Actions for ${application.company}`}
+                          >
+                            <MoreHorizontalIcon />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <LogNextStageMenuItem
                             application={application}
-                            onClose={() => setLogging(null)}
+                            pending={loggingStageId === application.id}
+                            onLog={(app, stage) => {
+                              void handleLogNextStage(app, stage);
+                            }}
                           />
-                        ) : null}
-                      </Popover>
+                          <DropdownMenuSub>
+                            <DropdownMenuSubTrigger>
+                              Set outcome
+                            </DropdownMenuSubTrigger>
+                            <DropdownMenuSubContent>
+                              {OUTCOMES.map((outcome) => {
+                                const offerLocked =
+                                  isOfferOnlyOutcome(outcome) && !reachedOffer;
+
+                                return (
+                                  <DropdownMenuItem
+                                    key={outcome}
+                                    disabled={offerLocked}
+                                    onSelect={() => {
+                                      void handleSetOutcome(application, outcome);
+                                    }}
+                                  >
+                                    {OUTCOME_CONFIG[outcome].label}
+                                  </DropdownMenuItem>
+                                );
+                              })}
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem
+                                onSelect={() => {
+                                  void handleSetOutcome(application, null);
+                                }}
+                              >
+                                Clear outcome
+                              </DropdownMenuItem>
+                            </DropdownMenuSubContent>
+                          </DropdownMenuSub>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem onSelect={() => openEdit(application)}>
+                            Edit
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            variant="destructive"
+                            onSelect={() => {
+                              setDeleteError(null);
+                              setDeleting(application);
+                            }}
+                          >
+                            Delete
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                     </TableCell>
                   </TableRow>
                 );
