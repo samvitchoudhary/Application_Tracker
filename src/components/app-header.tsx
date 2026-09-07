@@ -51,13 +51,18 @@ export function AppHeader({
   }
 
   return (
-    <header className="border-b bg-background">
+    <header className="border-b border-border bg-card">
       <div className="mx-auto flex h-14 max-w-6xl items-center gap-4 px-6">
-        <p className="text-sm font-semibold tracking-tight">Job Tracker</p>
+        <p className="font-heading text-base font-bold tracking-tight text-foreground">
+          Job Tracker
+        </p>
 
         {cycles.length > 0 && selectedCycleId ? (
           <Select value={selectedCycleId} onValueChange={onCycleChange}>
-            <SelectTrigger className="min-w-52 max-w-xs" aria-label="Select cycle">
+            <SelectTrigger
+              className="h-8 min-w-52 max-w-xs border-border bg-transparent text-sm shadow-none"
+              aria-label="Select cycle"
+            >
               <SelectValue />
             </SelectTrigger>
             <SelectContent position="popper" align="start">
@@ -66,7 +71,7 @@ export function AppHeader({
                   <span className="flex min-w-0 items-center gap-2">
                     <span className="truncate">{cycle.name}</span>
                     {cycle.isActive ? (
-                      <span className="rounded-md bg-muted px-1.5 py-0.5 text-[0.65rem] font-medium tracking-wide text-muted-foreground uppercase">
+                      <span className="rounded-full border border-border bg-background px-2 py-0.5 text-[0.65rem] font-medium text-faint">
                         Active
                       </span>
                     ) : null}

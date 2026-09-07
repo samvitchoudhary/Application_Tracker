@@ -67,7 +67,7 @@ export default function SignUpPage() {
             </Button>
             <p className="text-center text-sm text-muted-foreground">
               Already have one?{" "}
-              <Link href="/auth/sign-in" className="text-foreground underline">
+              <Link href="/auth/sign-in" className="text-cream underline-offset-4 hover:underline">
                 Sign in
               </Link>
             </p>

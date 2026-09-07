@@ -56,7 +56,7 @@ export default function SignInPage() {
             </Button>
             <p className="text-center text-sm text-muted-foreground">
               Need an account?{" "}
-              <Link href="/auth/sign-up" className="text-foreground underline">
+              <Link href="/auth/sign-up" className="text-cream underline-offset-4 hover:underline">
                 Sign up
               </Link>
             </p>

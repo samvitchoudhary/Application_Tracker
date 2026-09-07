@@ -390,7 +390,10 @@ export function PipelineTable({ applications, cycleId }: PipelineTableProps) {
     <section className="space-y-4">
       <div className="flex flex-wrap items-center gap-2">
         <Select value={stageFilter} onValueChange={setStageFilter}>
-          <SelectTrigger className="w-48" aria-label="Filter by stage">
+          <SelectTrigger
+            className="h-9 w-48 border-border bg-transparent shadow-none"
+            aria-label="Filter by stage"
+          >
             <SelectValue placeholder="Stage" />
           </SelectTrigger>
           <SelectContent position="popper">
@@ -403,7 +406,10 @@ export function PipelineTable({ applications, cycleId }: PipelineTableProps) {
           </SelectContent>
         </Select>
         <Select value={outcomeFilter} onValueChange={setOutcomeFilter}>
-          <SelectTrigger className="w-56" aria-label="Filter by outcome">
+          <SelectTrigger
+            className="h-9 w-56 border-border bg-transparent shadow-none"
+            aria-label="Filter by outcome"
+          >
             <SelectValue placeholder="Outcome" />
           </SelectTrigger>
           <SelectContent position="popper">
@@ -419,29 +425,38 @@ export function PipelineTable({ applications, cycleId }: PipelineTableProps) {
       </div>
 
       {applications.length === 0 ? (
-        <div className="flex flex-col items-center justify-center gap-3 rounded-xl border bg-card px-6 py-16 text-center">
-          <p className="text-sm font-medium">No applications yet</p>
+        <div className="flex flex-col items-center justify-center gap-3 rounded-2xl border border-border bg-card px-6 py-16 text-center">
+          <p className="text-sm font-medium">
+            No applications yet — add your first one.
+          </p>
           <p className="max-w-sm text-sm text-muted-foreground">
-            Add your first application to this cycle to start tracking the pipeline.
+            Track companies, stages, and outcomes for this recruiting cycle.
           </p>
           {addButton}
         </div>
       ) : rows.length === 0 ? (
-        <div className="flex flex-col items-center justify-center gap-2 rounded-xl border bg-card px-6 py-16 text-center">
+        <div className="flex flex-col items-center justify-center gap-2 rounded-2xl border border-border bg-card px-6 py-16 text-center">
           <p className="text-sm font-medium">No applications match these filters</p>
           <p className="text-sm text-muted-foreground">
             Try another stage or outcome, or clear the filters.
           </p>
         </div>
       ) : (
-        <div className="overflow-hidden rounded-xl border bg-card">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Company</TableHead>
-                <TableHead>Role</TableHead>
-                <TableHead>Locations</TableHead>
-                <TableHead>
+        <div className="overflow-hidden rounded-2xl border border-border bg-card">
+          <div className="max-h-[min(70vh,48rem)] overflow-auto px-4 pb-2">
+            <Table>
+              <TableHeader className="sticky top-0 z-10 bg-card">
+                <TableRow className="border-border hover:bg-transparent">
+                  <TableHead className="py-3 font-medium text-muted-foreground">
+                    Company
+                  </TableHead>
+                  <TableHead className="py-3 font-medium text-muted-foreground">
+                    Role
+                  </TableHead>
+                  <TableHead className="py-3 font-medium text-muted-foreground">
+                    Locations
+                  </TableHead>
+                  <TableHead className="py-3 text-right font-medium text-muted-foreground">
                   <Button
                     type="button"
                     variant="ghost"
@@ -453,7 +468,7 @@ export function PipelineTable({ applications, cycleId }: PipelineTableProps) {
                     {sortKey === "date" ? sortIcon : null}
                   </Button>
                 </TableHead>
-                <TableHead className="min-w-[16rem]">
+                <TableHead className="min-w-[16rem] py-3 font-medium text-muted-foreground">
                   <Button
                     type="button"
                     variant="ghost"
@@ -465,7 +480,7 @@ export function PipelineTable({ applications, cycleId }: PipelineTableProps) {
                     {sortKey === "stage" ? sortIcon : null}
                   </Button>
                 </TableHead>
-                <TableHead className="w-12">
+                <TableHead className="w-12 py-3">
                   <span className="sr-only">Actions</span>
                 </TableHead>
               </TableRow>
@@ -478,14 +493,17 @@ export function PipelineTable({ applications, cycleId }: PipelineTableProps) {
                 );
 
                 return (
-                  <TableRow key={application.id}>
-                    <TableCell className="font-medium">
+                  <TableRow
+                    key={application.id}
+                    className="border-border hover:bg-surface-hover"
+                  >
+                    <TableCell className="py-4 font-medium">
                       {application.link?.trim() ? (
                         <a
                           href={application.link}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="text-primary underline-offset-4 hover:underline"
+                          className="text-foreground underline-offset-4 transition-colors hover:text-cream hover:underline focus-visible:rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                           onClick={(event) => event.stopPropagation()}
                         >
                           {application.company}
@@ -494,20 +512,21 @@ export function PipelineTable({ applications, cycleId }: PipelineTableProps) {
                         application.company
                       )}
                     </TableCell>
-                    <TableCell>{application.role}</TableCell>
-                    <TableCell className="text-muted-foreground">
+                    <TableCell className="py-4">{application.role}</TableCell>
+                    <TableCell className="py-4 text-muted-foreground">
                       {application.locations || "—"}
                     </TableCell>
-                    <TableCell className="text-muted-foreground">
+                    <TableCell className="py-4 text-right text-muted-foreground tabular-nums">
                       {formatAppliedDate(application.dateApplied)}
                     </TableCell>
-                    <TableCell>
+                    <TableCell className="py-4">
                       <StageProgress
                         stageEvents={application.stageEvents}
                         outcome={application.outcome}
+                        currentStage={application.currentStage}
                       />
                     </TableCell>
-                    <TableCell>
+                    <TableCell className="py-4">
                       <DropdownMenu
                         open={openMenuId === application.id}
                         onOpenChange={(open) => {
@@ -526,6 +545,7 @@ export function PipelineTable({ applications, cycleId }: PipelineTableProps) {
                             type="button"
                             variant="ghost"
                             size="icon-sm"
+                            className="text-muted-foreground hover:bg-surface-hover hover:text-foreground"
                             aria-label={`Actions for ${application.company}`}
                           >
                             <MoreHorizontalIcon />
@@ -591,6 +611,7 @@ export function PipelineTable({ applications, cycleId }: PipelineTableProps) {
               })}
             </TableBody>
           </Table>
+          </div>
         </div>
       )}
 

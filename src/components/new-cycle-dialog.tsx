@@ -115,7 +115,7 @@ export function EmptyCyclesPrompt({
   return (
     <div className="flex min-h-[calc(100vh-3.5rem)] flex-col items-center justify-center gap-3 px-6 text-center">
       <p className="text-sm font-medium">
-        Create your first cycle to get started
+        No cycles yet — create your first one to get started.
       </p>
       <Button type="button" onClick={() => setOpen(true)}>
         Create cycle

@@ -138,44 +138,44 @@ export const STAGE_CONFIG: Record<Stage, AccentClasses> = {
   Applied: {
     label: "Applied",
     className:
-      "border-sky-200 bg-sky-50 text-sky-800 dark:border-sky-800 dark:bg-sky-950/40 dark:text-sky-300",
-    chartColor: "#0ea5e9",
+      "border-sky-400/45 bg-sky-400/15 text-sky-300",
+    chartColor: "#38bdf8",
   },
   "OA/Assessment": {
     label: "OA/Assessment",
     className:
-      "border-yellow-200 bg-yellow-50 text-yellow-800 dark:border-yellow-800 dark:bg-yellow-950/40 dark:text-yellow-300",
-    chartColor: "#eab308",
+      "border-yellow-400/45 bg-yellow-400/15 text-yellow-300",
+    chartColor: "#fbbf24",
   },
   "Recruiter Screen": {
     label: "Recruiter Screen",
     className:
-      "border-blue-200 bg-blue-50 text-blue-800 dark:border-blue-800 dark:bg-blue-950/40 dark:text-blue-300",
-    chartColor: "#3b82f6",
+      "border-blue-400/45 bg-blue-400/15 text-blue-300",
+    chartColor: "#60a5fa",
   },
   "First Interview": {
     label: "First Interview",
     className:
-      "border-orange-200 bg-orange-50 text-orange-800 dark:border-orange-800 dark:bg-orange-950/40 dark:text-orange-300",
-    chartColor: "#f97316",
+      "border-orange-400/45 bg-orange-400/15 text-orange-300",
+    chartColor: "#fb923c",
   },
   "Second Interview": {
     label: "Second Interview",
     className:
-      "border-amber-200 bg-amber-50 text-amber-800 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-300",
-    chartColor: "#f59e0b",
+      "border-amber-400/45 bg-amber-400/15 text-amber-300",
+    chartColor: "#fbbf24",
   },
   "Third Interview": {
     label: "Third Interview",
     className:
-      "border-orange-300 bg-orange-100 text-orange-900 dark:border-orange-800 dark:bg-orange-950/50 dark:text-orange-200",
-    chartColor: "#ea580c",
+      "border-orange-400/45 bg-orange-400/15 text-orange-200",
+    chartColor: "#fb923c",
   },
   Offer: {
     label: "Offer",
     className:
-      "border-emerald-200 bg-emerald-50 text-emerald-800 dark:border-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300",
-    chartColor: "#10b981",
+      "border-emerald-400/45 bg-emerald-400/15 text-emerald-300",
+    chartColor: "#34d399",
   },
 };
 
@@ -183,19 +183,19 @@ export const OUTCOME_CONFIG: Record<Outcome, AccentClasses> = {
   Ghosted: {
     label: "Ghosted",
     className:
-      "border-slate-200 bg-slate-50 text-slate-700 dark:border-slate-700 dark:bg-slate-900/40 dark:text-slate-300",
-    chartColor: "#94a3b8",
+      "border-slate-400/45 bg-slate-400/15 text-slate-300",
+    chartColor: "#b0bcc9",
   },
   Rejected: {
     label: "Rejected",
     className:
-      "border-rose-200 bg-rose-50 text-rose-800 dark:border-rose-800 dark:bg-rose-950/40 dark:text-rose-300",
-    chartColor: "#f43f5e",
+      "border-rose-400/45 bg-rose-400/15 text-rose-300",
+    chartColor: "#fb7185",
   },
   Accepted: {
     label: "Accepted",
     className:
-      "border-green-200 bg-green-50 text-green-800 dark:border-green-800 dark:bg-green-950/40 dark:text-green-300",
-    chartColor: "#22c55e",
+      "border-green-400/45 bg-green-400/15 text-green-300",
+    chartColor: "#4ade80",
   },
 };

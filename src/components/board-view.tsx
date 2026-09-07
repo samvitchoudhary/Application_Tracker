@@ -6,6 +6,7 @@ import { InsightsView } from "@/components/insights-view";
 import { PipelineTable } from "@/components/pipeline-table";
 import { Button } from "@/components/ui/button";
 import { parseAppView, type AppView } from "@/lib/views";
+import { cn } from "@/lib/utils";
 
 type BoardViewProps = {
   applications: ApplicationFormRecord[];
@@ -24,30 +25,30 @@ export function BoardView({ applications, cycleId }: BoardViewProps) {
   }
 
   return (
-    <section className="space-y-4">
+    <section className="space-y-5">
       <div
-        className="inline-flex rounded-lg border p-0.5"
+        className="inline-flex rounded-[10px] border border-border bg-background p-1"
         role="group"
         aria-label="View"
       >
-        <Button
-          type="button"
-          size="sm"
-          variant={view === "pipeline" ? "secondary" : "ghost"}
-          aria-pressed={view === "pipeline"}
-          onClick={() => setView("pipeline")}
-        >
-          Pipeline
-        </Button>
-        <Button
-          type="button"
-          size="sm"
-          variant={view === "insights" ? "secondary" : "ghost"}
-          aria-pressed={view === "insights"}
-          onClick={() => setView("insights")}
-        >
-          Insights
-        </Button>
+        {(["pipeline", "insights"] as const).map((option) => (
+          <Button
+            key={option}
+            type="button"
+            size="sm"
+            variant="ghost"
+            className={cn(
+              "rounded-lg px-4",
+              view === option
+                ? "bg-secondary text-foreground shadow-none"
+                : "text-muted-foreground hover:text-foreground"
+            )}
+            aria-pressed={view === option}
+            onClick={() => setView(option)}
+          >
+            {option === "pipeline" ? "Pipeline" : "Insights"}
+          </Button>
+        ))}
       </div>
 
       {view === "insights" ? (

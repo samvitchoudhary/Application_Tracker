@@ -23,10 +23,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import {
-  PRIORITIES,
-  PRIORITY_CONFIG,
-} from "@/lib/status";
+import { PRIORITIES, PRIORITY_CONFIG } from "@/lib/status";
 import {
   furthestStage,
   STAGE_CONFIG,
@@ -41,12 +38,19 @@ type InsightsViewProps = {
 const TOOLTIP_STYLE = {
   backgroundColor: "var(--popover)",
   border: "1px solid var(--border)",
-  borderRadius: "8px",
+  borderRadius: "10px",
   fontSize: "12px",
   color: "var(--popover-foreground)",
 };
 
 const AXIS_TICK = { fill: "var(--muted-foreground)", fontSize: 12 };
+
+/** Muted warm tones — priority is not a stage/outcome accent. */
+const PRIORITY_CHART_COLORS: Record<(typeof PRIORITIES)[number], string> = {
+  High: "#A69E95",
+  Medium: "#8A8279",
+  Low: "#7C746B",
+};
 
 function parseAppliedDate(value: string): Date | null {
   const [year, month, day] = value.slice(0, 10).split("-").map(Number);
@@ -100,19 +104,15 @@ function countFormatter(
 export function InsightsView({ applications }: InsightsViewProps) {
   if (applications.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center rounded-xl border bg-card px-6 py-16 text-center">
+      <div className="flex flex-col items-center justify-center rounded-2xl border border-border bg-card px-6 py-16 text-center">
         <p className="text-sm font-medium">No data yet for this cycle</p>
         <p className="mt-1 max-w-sm text-sm text-muted-foreground">
-          Add applications to see stage, pace, and priority insights.
+          Add applications to see stage flow, pace, and priority breakdowns.
         </p>
       </div>
     );
   }
 
-  const total = applications.length;
-  let appliedOnly = 0;
-  let activeCount = 0;
-  let offerCount = 0;
   const stageCounts = Object.fromEntries(STAGES.map((stage) => [stage, 0])) as Record<
     Stage,
     number
@@ -130,16 +130,6 @@ export function InsightsView({ applications }: InsightsViewProps) {
     stageCounts[application.currentStage] += 1;
     priorityCounts[application.priority] += 1;
 
-    if (application.currentStage === "Applied" && application.outcome == null) {
-      appliedOnly += 1;
-    }
-    if (application.outcome == null) {
-      activeCount += 1;
-    }
-    if (furthestStage(application.stageEvents, application.currentStage) === "Offer") {
-      offerCount += 1;
-    }
-
     const appliedDate = parseAppliedDate(application.dateApplied);
     if (!appliedDate) {
       continue;
@@ -156,8 +146,6 @@ export function InsightsView({ applications }: InsightsViewProps) {
       latestWeek = weekStart;
     }
   }
-
-  const responseRate = Math.round(((total - appliedOnly) / total) * 100);
 
   const stageData = STAGES.map((stage) => ({
     name: STAGE_CONFIG[stage].label,
@@ -177,58 +165,20 @@ export function InsightsView({ applications }: InsightsViewProps) {
   const priorityData = PRIORITIES.map((priority) => ({
     name: PRIORITY_CONFIG[priority].label,
     count: priorityCounts[priority],
-    fill: PRIORITY_CONFIG[priority].chartColor,
+    fill: PRIORITY_CHART_COLORS[priority],
   }));
 
   return (
-    <div className="grid gap-4">
+    <div className="grid gap-5">
       <SankeyChart applications={applications} />
-      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-        <Card size="sm">
-          <CardHeader>
-            <CardDescription>Total applications</CardDescription>
-            <CardTitle className="text-2xl font-semibold tabular-nums">
-              {total}
-            </CardTitle>
-          </CardHeader>
-        </Card>
-        <Card size="sm">
-          <CardHeader>
-            <CardDescription>Active</CardDescription>
-            <CardTitle className="text-2xl font-semibold tabular-nums">
-              {activeCount}
-            </CardTitle>
-            <p className="text-xs text-muted-foreground">
-              No outcome set
-            </p>
-          </CardHeader>
-        </Card>
-        <Card size="sm">
-          <CardHeader>
-            <CardDescription>Offers</CardDescription>
-            <CardTitle className="text-2xl font-semibold tabular-nums">
-              {offerCount}
-            </CardTitle>
-          </CardHeader>
-        </Card>
-        <Card size="sm">
-          <CardHeader>
-            <CardDescription>Response rate</CardDescription>
-            <CardTitle className="text-2xl font-semibold tabular-nums">
-              {responseRate}%
-            </CardTitle>
-            <p className="text-xs text-muted-foreground">
-              (total − Applied with no outcome) / total
-            </p>
-          </CardHeader>
-        </Card>
-      </div>
 
-      <div className="grid gap-4 lg:grid-cols-5">
-        <Card className="lg:col-span-2">
+      <div className="grid gap-5 lg:grid-cols-5">
+        <Card className="rounded-2xl border-border bg-card ring-0 lg:col-span-2">
           <CardHeader>
             <CardTitle>Stage breakdown</CardTitle>
-            <CardDescription>Applications in this cycle by current stage</CardDescription>
+            <CardDescription>
+              Applications in this cycle by current stage
+            </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="h-64">
@@ -262,8 +212,8 @@ export function InsightsView({ applications }: InsightsViewProps) {
                     className="size-2 shrink-0 rounded-full"
                     style={{ backgroundColor: entry.fill }}
                   />
-                  <span>{entry.name}</span>
-                  <span className="tabular-nums text-muted-foreground">
+                  <span className="text-muted-foreground">{entry.name}</span>
+                  <span className="tabular-nums text-foreground">
                     {entry.value}
                   </span>
                 </li>
@@ -272,7 +222,7 @@ export function InsightsView({ applications }: InsightsViewProps) {
           </CardContent>
         </Card>
 
-        <Card className="lg:col-span-3">
+        <Card className="rounded-2xl border-border bg-card ring-0 lg:col-span-3">
           <CardHeader>
             <CardTitle>Applications over time</CardTitle>
             <CardDescription>Weekly pace by date applied</CardDescription>
@@ -280,7 +230,10 @@ export function InsightsView({ applications }: InsightsViewProps) {
           <CardContent>
             <div className="h-64">
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={weeklyData} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
+                <BarChart
+                  data={weeklyData}
+                  margin={{ top: 8, right: 8, left: 0, bottom: 0 }}
+                >
                   <CartesianGrid
                     vertical={false}
                     stroke="var(--border)"
@@ -317,10 +270,10 @@ export function InsightsView({ applications }: InsightsViewProps) {
           </CardContent>
         </Card>
 
-        <Card className="lg:col-span-5">
+        <Card className="rounded-2xl border-border bg-card ring-0 lg:col-span-5">
           <CardHeader>
             <CardTitle>Priority breakdown</CardTitle>
-            <CardDescription>Counts by High, Medium, and Low</CardDescription>
+            <CardDescription>Counts by high, medium, and low</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="h-48">

@@ -25,7 +25,7 @@ const LARGE_TERMINALS = new Set(["Rejected", "Ghosted"]);
 const THEME = {
   labels: {
     text: {
-      fill: "#334155",
+      fill: "#F4EEE6",
       fontSize: 11,
       fontWeight: 500,
     },
@@ -35,7 +35,7 @@ const THEME = {
       background: "var(--popover)",
       color: "var(--popover-foreground)",
       fontSize: 12,
-      borderRadius: 8,
+      borderRadius: 10,
       boxShadow: "none",
       border: "1px solid var(--border)",
     },
@@ -61,7 +61,7 @@ export function SankeyChart({ applications }: SankeyChartProps) {
   const sparse = applications.length > 0 && !hasStageToStageFlow(data);
 
   return (
-    <Card>
+    <Card className="rounded-2xl border-border bg-card ring-0">
       <CardHeader>
         <CardTitle>Application flow</CardTitle>
         <CardDescription>
@@ -89,7 +89,7 @@ export function SankeyChart({ applications }: SankeyChartProps) {
               nodeThickness={16}
               nodeSpacing={36}
               nodeBorderWidth={2}
-              nodeBorderColor="#ffffff"
+              nodeBorderColor="#38322C"
               nodeBorderRadius={4}
               linkOpacity={0.35}
               linkHoverOpacity={0.7}
@@ -99,7 +99,7 @@ export function SankeyChart({ applications }: SankeyChartProps) {
               label={(node) => `${node.id} (${node.value})`}
               labelPosition="outside"
               labelPadding={12}
-              labelTextColor="#334155"
+              labelTextColor="#F4EEE6"
               theme={THEME}
             />
           ) : (

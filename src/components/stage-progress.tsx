@@ -14,6 +14,7 @@ import {
   STAGE_CONFIG,
   STAGES,
   type Outcome,
+  type Stage,
   type StageEvent,
 } from "@/lib/stages";
 import { cn } from "@/lib/utils";
@@ -21,6 +22,7 @@ import { cn } from "@/lib/utils";
 type StageProgressProps = {
   stageEvents: StageEvent[];
   outcome: Outcome | null;
+  currentStage?: Stage;
 };
 
 function formatHistoryDate(value: string) {
@@ -36,48 +38,59 @@ function formatHistoryDate(value: string) {
   });
 }
 
-export function StageProgress({ stageEvents, outcome }: StageProgressProps) {
-  const furthest = furthestStage(stageEvents);
+export function StageProgress({
+  stageEvents,
+  outcome,
+  currentStage,
+}: StageProgressProps) {
+  const furthest = currentStage ?? furthestStage(stageEvents);
   const furthestIndex = STAGES.indexOf(furthest);
   const filledThrough = stageEvents.length > 0 ? furthestIndex : -1;
+  const stageLabel = isStage(furthest)
+    ? STAGE_CONFIG[furthest].label
+    : furthest;
 
   return (
-    <div className="flex min-w-[12rem] items-center gap-2">
+    <div className="flex min-w-[14rem] items-center gap-2.5">
       <Tooltip>
         <TooltipTrigger
           type="button"
-          className="flex min-w-0 flex-1 items-center gap-0.5 rounded-md py-1"
-          aria-label={`Progress through ${furthest}`}
+          className="flex min-w-0 flex-1 items-center gap-1 rounded-md py-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          aria-label={`Progress: ${stageLabel}`}
         >
-          {STAGES.map((stage, index) => {
-            const filled = index <= filledThrough;
+          <div className="flex min-w-0 flex-1 items-center gap-0.5">
+            {STAGES.map((stage, index) => {
+              const filled = index <= filledThrough;
 
-            return (
-              <span
-                key={stage}
-                className={cn(
-                  "h-1.5 min-w-0 flex-1 rounded-full",
-                  !filled && "bg-muted"
-                )}
-                style={
-                  filled
-                    ? { backgroundColor: STAGE_CONFIG[stage].chartColor }
-                    : undefined
-                }
-              />
-            );
-          })}
+              return (
+                <span
+                  key={stage}
+                  className={cn(
+                    "h-2 min-w-0 flex-1 rounded-sm first:rounded-l-full last:rounded-r-full",
+                    !filled && "bg-border"
+                  )}
+                  style={
+                    filled
+                      ? { backgroundColor: STAGE_CONFIG[stage].chartColor }
+                      : undefined
+                  }
+                />
+              );
+            })}
+          </div>
         </TooltipTrigger>
         <TooltipContent
           side="top"
           align="start"
-          className="max-w-xs items-start bg-popover py-2 text-left text-popover-foreground"
+          className="max-w-xs items-start py-2 text-left"
         >
           {stageEvents.length > 0 ? (
             <ul className="grid gap-1">
               {stageEvents.map((event, index) => (
                 <li key={`${event.stage}-${event.date}-${index}`}>
-                  {isStage(event.stage) ? STAGE_CONFIG[event.stage].label : event.stage}
+                  {isStage(event.stage)
+                    ? STAGE_CONFIG[event.stage].label
+                    : event.stage}
                   {" · "}
                   {formatHistoryDate(event.date)}
                 </li>
@@ -89,10 +102,17 @@ export function StageProgress({ stageEvents, outcome }: StageProgressProps) {
         </TooltipContent>
       </Tooltip>
 
-      {outcome && isOutcome(outcome) ? (
+      {!outcome ? (
+        <span className="shrink-0 font-heading text-xs font-medium text-muted-foreground">
+          {stageLabel}
+        </span>
+      ) : isOutcome(outcome) ? (
         <Badge
           variant="outline"
-          className={cn("shrink-0", OUTCOME_CONFIG[outcome].className)}
+          className={cn(
+            "shrink-0 rounded-full px-2.5",
+            OUTCOME_CONFIG[outcome].className
+          )}
         >
           {OUTCOME_CONFIG[outcome].label}
         </Badge>
