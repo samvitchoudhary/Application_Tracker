@@ -491,7 +491,19 @@ export function PipelineTable({ applications, cycleId }: PipelineTableProps) {
                 return (
                   <TableRow key={application.id}>
                     <TableCell className="font-medium">
-                      {application.company}
+                      {application.link?.trim() ? (
+                        <a
+                          href={application.link}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-primary underline-offset-4 hover:underline"
+                          onClick={(event) => event.stopPropagation()}
+                        >
+                          {application.company}
+                        </a>
+                      ) : (
+                        application.company
+                      )}
                     </TableCell>
                     <TableCell>{application.role}</TableCell>
                     <TableCell className="text-muted-foreground">
