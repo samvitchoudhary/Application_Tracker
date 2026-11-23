@@ -1,13 +1,14 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useEffect, useMemo, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import {
   ArrowDownIcon,
   ArrowUpIcon,
   MoreHorizontalIcon,
   PlusIcon,
   Trash2Icon,
+  XIcon,
 } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -30,6 +31,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -80,9 +82,12 @@ import {
   STAGE_CONFIG,
   STAGES,
   type Outcome,
+  parseStageSlug,
+  stageToSlug,
   type Stage,
   type StageEvent,
 } from "@/lib/stages";
+import { applicationReachedStage } from "@/lib/sankey";
 type PipelineTableProps = {
   applications: ApplicationFormRecord[];
   cycleId: string;
@@ -248,6 +253,7 @@ function LogNextStageMenuItem({
 
 export function PipelineTable({ applications, cycleId }: PipelineTableProps) {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [addOpen, setAddOpen] = useState(false);
   const [editing, setEditing] = useState<ApplicationFormRecord | null>(null);
   const [historyDraft, setHistoryDraft] = useState<StageEvent[]>([]);
@@ -261,10 +267,39 @@ export function PipelineTable({ applications, cycleId }: PipelineTableProps) {
   const [sortKey, setSortKey] = useState<SortKey>("date");
   const [sortDir, setSortDir] = useState<SortDir>("desc");
 
+  useEffect(() => {
+    const fromUrl = parseStageSlug(searchParams.get("stage"));
+    if (fromUrl) {
+      setStageFilter(fromUrl);
+    }
+  }, [searchParams]);
+
+  function setStageFilterWithUrl(value: string) {
+    setStageFilter(value);
+    const params = new URLSearchParams(searchParams.toString());
+    if (value === "all") {
+      params.delete("stage");
+    } else {
+      params.set("stage", stageToSlug(value as Stage));
+    }
+    router.replace(`/?${params.toString()}`);
+  }
+
   const rows = useMemo(() => {
     const filtered = applications.filter((application) => {
-      if (stageFilter !== "all" && application.currentStage !== stageFilter) {
-        return false;
+      if (stageFilter !== "all") {
+        const stage = stageFilter as Stage;
+        const reached = applicationReachedStage(
+          {
+            stageEvents: application.stageEvents ?? [],
+            currentStage: application.currentStage,
+            outcome: application.outcome,
+          },
+          stage
+        );
+        if (!reached) {
+          return false;
+        }
       }
 
       if (outcomeFilter !== "all") {
@@ -389,7 +424,7 @@ export function PipelineTable({ applications, cycleId }: PipelineTableProps) {
   return (
     <section className="space-y-4">
       <div className="flex flex-wrap items-center gap-2">
-        <Select value={stageFilter} onValueChange={setStageFilter}>
+        <Select value={stageFilter} onValueChange={setStageFilterWithUrl}>
           <SelectTrigger
             className="h-9 w-48 border-border bg-transparent shadow-none"
             aria-label="Filter by stage"
@@ -421,6 +456,24 @@ export function PipelineTable({ applications, cycleId }: PipelineTableProps) {
             ))}
           </SelectContent>
         </Select>
+        {stageFilter !== "all" ? (
+          <Badge
+            variant="secondary"
+            className="gap-1 pr-1 font-normal"
+          >
+            Reached: {STAGE_CONFIG[stageFilter as Stage].label}
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              className="size-5 rounded-sm hover:bg-muted"
+              aria-label="Clear stage filter"
+              onClick={() => setStageFilterWithUrl("all")}
+            >
+              <XIcon className="size-3" />
+            </Button>
+          </Badge>
+        ) : null}
         <div className="ml-auto">{addButton}</div>
       </div>
 
