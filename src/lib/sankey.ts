@@ -43,6 +43,13 @@ function nodeColor(id: string): string {
   return STAGE_CONFIG.Applied.chartColor;
 }
 
+export function applicationReachedStage(
+  application: SankeyApplication,
+  stage: Stage
+): boolean {
+  return reachedStages(application).includes(stage);
+}
+
 function reachedStages(application: SankeyApplication): Stage[] {
   const reached = new Set<Stage>();
 

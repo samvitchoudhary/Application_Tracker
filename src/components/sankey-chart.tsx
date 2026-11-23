@@ -1,7 +1,12 @@
 "use client";
 
 import { ResponsiveSankey } from "@nivo/sankey";
-import type { DefaultLink, SankeyNodeDatum } from "@nivo/sankey";
+import type {
+  DefaultLink,
+  SankeyLinkDatum,
+  SankeyNodeDatum,
+} from "@nivo/sankey";
+import { useRouter, useSearchParams } from "next/navigation";
 import {
   Card,
   CardContent,
@@ -15,6 +20,7 @@ import {
   type SankeyApplication,
   type SankeyNode,
 } from "@/lib/sankey";
+import { isStage, stageToSlug } from "@/lib/stages";
 
 type SankeyChartProps = {
   applications: SankeyApplication[];
@@ -56,9 +62,30 @@ function sortNodes(
   return b.value - a.value;
 }
 
+function isStageNode(
+  datum: SankeyNodeDatum<SankeyNode, DefaultLink> | SankeyLinkDatum<SankeyNode, DefaultLink>
+): datum is SankeyNodeDatum<SankeyNode, DefaultLink> {
+  return "id" in datum && typeof datum.id === "string";
+}
+
 export function SankeyChart({ applications }: SankeyChartProps) {
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const data = buildSankeyData(applications);
   const sparse = applications.length > 0 && !hasStageToStageFlow(data);
+
+  function handleClick(
+    datum: SankeyNodeDatum<SankeyNode, DefaultLink> | SankeyLinkDatum<SankeyNode, DefaultLink>
+  ) {
+    if (!isStageNode(datum) || !isStage(datum.id)) {
+      return;
+    }
+
+    const params = new URLSearchParams(searchParams.toString());
+    params.set("view", "pipeline");
+    params.set("stage", stageToSlug(datum.id));
+    router.push(`/?${params.toString()}`);
+  }
 
   return (
     <Card className="rounded-2xl border-border bg-card ring-0">
@@ -75,10 +102,12 @@ export function SankeyChart({ applications }: SankeyChartProps) {
         ) : null}
       </CardHeader>
       <CardContent>
-        <div className="h-[600px]">
+        <div className="h-[600px] [&_rect]:cursor-pointer">
           {data.links.length > 0 ? (
             <ResponsiveSankey<SankeyNode, DefaultLink>
               data={data}
+              isInteractive
+              onClick={handleClick}
               margin={{ top: 20, right: 152, bottom: 20, left: 104 }}
               align="justify"
               sort={sortNodes}

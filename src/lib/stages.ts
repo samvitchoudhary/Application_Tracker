@@ -34,6 +34,34 @@ export function isStage(value: string): value is Stage {
   return (STAGES as readonly string[]).includes(value);
 }
 
+/** URL slug per stage (e.g. `oa` → OA/Assessment). */
+export const STAGE_SLUG: Record<Stage, string> = {
+  Applied: "applied",
+  "OA/Assessment": "oa",
+  "Recruiter Screen": "recruiter-screen",
+  "First Interview": "first-interview",
+  "Second Interview": "second-interview",
+  "Third Interview": "third-interview",
+  Offer: "offer",
+};
+
+const SLUG_TO_STAGE = Object.fromEntries(
+  Object.entries(STAGE_SLUG).map(([stage, slug]) => [slug, stage])
+) as Record<string, Stage>;
+
+export function parseStageSlug(slug: string | null | undefined): Stage | null {
+  if (!slug) {
+    return null;
+  }
+
+  const stage = SLUG_TO_STAGE[slug.toLowerCase()];
+  return stage ?? null;
+}
+
+export function stageToSlug(stage: Stage): string {
+  return STAGE_SLUG[stage];
+}
+
 export function isOutcome(value: string): value is Outcome {
   return (OUTCOMES as readonly string[]).includes(value);
 }
