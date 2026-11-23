@@ -23,7 +23,6 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { PRIORITIES, PRIORITY_CONFIG } from "@/lib/status";
 import {
   furthestStage,
   STAGE_CONFIG,
@@ -44,13 +43,6 @@ const TOOLTIP_STYLE = {
 };
 
 const AXIS_TICK = { fill: "var(--muted-foreground)", fontSize: 12 };
-
-/** Muted warm tones — priority is not a stage/outcome accent. */
-const PRIORITY_CHART_COLORS: Record<(typeof PRIORITIES)[number], string> = {
-  High: "#A69E95",
-  Medium: "#8A8279",
-  Low: "#7C746B",
-};
 
 function parseAppliedDate(value: string): Date | null {
   const [year, month, day] = value.slice(0, 10).split("-").map(Number);
@@ -107,7 +99,7 @@ export function InsightsView({ applications }: InsightsViewProps) {
       <div className="flex flex-col items-center justify-center rounded-2xl border border-border bg-card px-6 py-16 text-center">
         <p className="text-sm font-medium">No data yet for this cycle</p>
         <p className="mt-1 max-w-sm text-sm text-muted-foreground">
-          Add applications to see stage flow, pace, and priority breakdowns.
+          Add applications to see stage flow and application pace.
         </p>
       </div>
     );
@@ -117,18 +109,12 @@ export function InsightsView({ applications }: InsightsViewProps) {
     Stage,
     number
   >;
-  const priorityCounts = {
-    High: 0,
-    Medium: 0,
-    Low: 0,
-  };
   const weekCounts = new Map<string, number>();
   let earliestWeek: Date | null = null;
   let latestWeek: Date | null = null;
 
   for (const application of applications) {
     stageCounts[application.currentStage] += 1;
-    priorityCounts[application.priority] += 1;
 
     const appliedDate = parseAppliedDate(application.dateApplied);
     if (!appliedDate) {
@@ -161,12 +147,6 @@ export function InsightsView({ applications }: InsightsViewProps) {
           count: weekCounts.get(week) ?? 0,
         }))
       : [];
-
-  const priorityData = PRIORITIES.map((priority) => ({
-    name: PRIORITY_CONFIG[priority].label,
-    count: priorityCounts[priority],
-    fill: PRIORITY_CHART_COLORS[priority],
-  }));
 
   return (
     <div className="grid gap-5">
@@ -264,54 +244,6 @@ export function InsightsView({ applications }: InsightsViewProps) {
                     radius={[6, 6, 0, 0]}
                     maxBarSize={48}
                   />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="rounded-2xl border-border bg-card ring-0 lg:col-span-5">
-          <CardHeader>
-            <CardTitle>Priority breakdown</CardTitle>
-            <CardDescription>Counts by high, medium, and low</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="h-48">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart
-                  data={priorityData}
-                  layout="vertical"
-                  margin={{ top: 8, right: 16, left: 8, bottom: 0 }}
-                >
-                  <CartesianGrid
-                    horizontal={false}
-                    stroke="var(--border)"
-                    strokeDasharray="3 3"
-                  />
-                  <XAxis
-                    type="number"
-                    allowDecimals={false}
-                    tick={AXIS_TICK}
-                    tickLine={false}
-                    axisLine={false}
-                  />
-                  <YAxis
-                    type="category"
-                    dataKey="name"
-                    tick={AXIS_TICK}
-                    tickLine={false}
-                    axisLine={false}
-                    width={72}
-                  />
-                  <Tooltip
-                    contentStyle={TOOLTIP_STYLE}
-                    formatter={countFormatter}
-                  />
-                  <Bar dataKey="count" radius={[0, 6, 6, 0]} maxBarSize={28}>
-                    {priorityData.map((entry) => (
-                      <Cell key={entry.name} fill={entry.fill} />
-                    ))}
-                  </Bar>
                 </BarChart>
               </ResponsiveContainer>
             </div>
