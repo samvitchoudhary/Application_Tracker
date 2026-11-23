@@ -8,15 +8,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { PRIORITIES, PRIORITY_CONFIG, type Priority } from "@/lib/status";
 import type { Outcome, Stage, StageEvent } from "@/lib/stages";
 
 export type ApplicationFormRecord = {
@@ -29,7 +21,6 @@ export type ApplicationFormRecord = {
   currentStage: Stage;
   outcome: Outcome | null;
   stageEvents: StageEvent[];
-  priority: Priority;
   notes: string | null;
 };
 
@@ -68,9 +59,6 @@ export function ApplicationForm({
       ? toDateInputValue(application.dateApplied)
       : todayIsoDate()
   );
-  const [priority, setPriority] = useState<Priority>(
-    application?.priority ?? "Medium"
-  );
   const [notes, setNotes] = useState(application?.notes ?? "");
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
@@ -87,7 +75,6 @@ export function ApplicationForm({
       locations: locations.trim() ? locations : null,
       link: link.trim() ? link : null,
       dateApplied,
-      priority,
       notes: notes.trim() ? notes : null,
     };
 
@@ -163,24 +150,6 @@ export function ApplicationForm({
             value={dateApplied}
             onChange={(event) => setDateApplied(event.target.value)}
           />
-        </div>
-        <div className="grid gap-1.5">
-          <Label htmlFor="priority">Priority</Label>
-          <Select
-            value={priority}
-            onValueChange={(value) => setPriority(value as Priority)}
-          >
-            <SelectTrigger id="priority" className="w-full">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent position="popper">
-              {PRIORITIES.map((value) => (
-                <SelectItem key={value} value={value}>
-                  {PRIORITY_CONFIG[value].label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
         </div>
       </div>
       <div className="grid gap-1.5">

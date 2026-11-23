@@ -7,7 +7,6 @@ import { db } from "@/lib/db";
 import {
   applications,
   cycles,
-  priorityEnum,
   type Application,
   type Cycle,
   type NewApplication,
@@ -35,7 +34,6 @@ export type ApplicationWrite = {
   locations?: string | null;
   link?: string | null;
   dateApplied?: string | null;
-  priority?: (typeof priorityEnum.enumValues)[number];
   notes?: string | null;
 };
 
@@ -44,14 +42,9 @@ export type ApplicationPatch = Partial<ApplicationWrite>;
 const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
-const PRIORITIES = priorityEnum.enumValues;
 
 function isUuid(value: string) {
   return UUID_RE.test(value);
-}
-
-function isPriority(value: string): value is (typeof PRIORITIES)[number] {
-  return (PRIORITIES as readonly string[]).includes(value);
 }
 
 function todayIsoDate() {
@@ -149,10 +142,6 @@ function parseApplicationWrite(
     return role;
   }
 
-  if (data.priority !== undefined && !isPriority(data.priority)) {
-    return { ok: false, error: "Invalid priority." };
-  }
-
   if (
     data.dateApplied != null &&
     (typeof data.dateApplied !== "string" || !DATE_RE.test(data.dateApplied))
@@ -175,7 +164,6 @@ function parseApplicationWrite(
       currentStage: "Applied",
       outcome: null,
       stageEvents: asStageEvents([{ stage: "Applied", date: dateApplied }]),
-      ...(data.priority ? { priority: data.priority } : {}),
     },
   };
 }
@@ -275,13 +263,6 @@ export async function updateApplication(
     if (data.dateApplied) {
       patch.dateApplied = data.dateApplied;
     }
-  }
-
-  if (data.priority !== undefined) {
-    if (!isPriority(data.priority)) {
-      return { success: false, error: "Invalid priority." };
-    }
-    patch.priority = data.priority;
   }
 
   const [application] = await db
