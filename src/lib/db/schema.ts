@@ -24,8 +24,6 @@ export const stageEnum = pgEnum("stage", STAGES);
 
 export const outcomeEnum = pgEnum("outcome", OUTCOMES);
 
-export const priorityEnum = pgEnum("priority", ["High", "Medium", "Low"]);
-
 export const cycles = pgTable(
   "cycles",
   {
@@ -58,7 +56,6 @@ export const applications = pgTable(
       .$type<{ stage: string; date: string }[]>()
       .notNull()
       .default(sql`'[]'::jsonb`),
-    priority: priorityEnum("priority").notNull().default("Medium"),
     notes: text("notes"),
     createdAt: timestamp("created_at").notNull().defaultNow(),
     updatedAt: timestamp("updated_at").notNull().defaultNow(),

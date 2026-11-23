@@ -8,10 +8,6 @@ export const STATUSES = [
 
 export type Status = (typeof STATUSES)[number];
 
-export const PRIORITIES = ["High", "Medium", "Low"] as const;
-
-export type Priority = (typeof PRIORITIES)[number];
-
 export type AccentClasses = {
   label: string;
   className: string;
@@ -48,26 +44,5 @@ export const STATUS_CONFIG: Record<Status, AccentClasses> = {
     className:
       "border-rose-200 bg-rose-50 text-rose-800 dark:border-rose-800 dark:bg-rose-950/40 dark:text-rose-300",
     chartColor: "#f43f5e",
-  },
-};
-
-export const PRIORITY_CONFIG: Record<Priority, AccentClasses> = {
-  High: {
-    label: "High",
-    className:
-      "border-red-200 bg-red-50 text-red-800 dark:border-red-800 dark:bg-red-950/40 dark:text-red-300",
-    chartColor: "#ef4444",
-  },
-  Medium: {
-    label: "Medium",
-    className:
-      "border-amber-200 bg-amber-50 text-amber-800 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-300",
-    chartColor: "#f59e0b",
-  },
-  Low: {
-    label: "Low",
-    className:
-      "border-slate-200 bg-slate-50 text-slate-700 dark:border-slate-700 dark:bg-slate-900/40 dark:text-slate-300",
-    chartColor: "#64748b",
   },
 };

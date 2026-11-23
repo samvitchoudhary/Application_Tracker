@@ -262,6 +262,7 @@ export function PipelineTable({ applications, cycleId }: PipelineTableProps) {
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const [deletePending, setDeletePending] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
   const [stageFilter, setStageFilter] = useState<string>("all");
   const [outcomeFilter, setOutcomeFilter] = useState<string>("all");
   const [sortKey, setSortKey] = useState<SortKey>("date");
@@ -286,6 +287,8 @@ export function PipelineTable({ applications, cycleId }: PipelineTableProps) {
   }
 
   const rows = useMemo(() => {
+    const needle = searchQuery.trim().toLowerCase();
+
     const filtered = applications.filter((application) => {
       if (stageFilter !== "all") {
         const stage = stageFilter as Stage;
@@ -302,8 +305,23 @@ export function PipelineTable({ applications, cycleId }: PipelineTableProps) {
         }
       }
 
-      if (outcomeFilter !== "all") {
-        return application.outcome === outcomeFilter;
+      if (outcomeFilter !== "all" && application.outcome !== outcomeFilter) {
+        return false;
+      }
+
+      if (needle) {
+        const fields = [
+          application.company,
+          application.role,
+          application.locations,
+          application.notes,
+        ];
+        const matches = fields.some(
+          (value) => value && value.toLowerCase().includes(needle)
+        );
+        if (!matches) {
+          return false;
+        }
       }
 
       return true;
@@ -320,7 +338,7 @@ export function PipelineTable({ applications, cycleId }: PipelineTableProps) {
 
       return a.dateApplied.localeCompare(b.dateApplied) * direction;
     });
-  }, [applications, outcomeFilter, sortDir, sortKey, stageFilter]);
+  }, [applications, outcomeFilter, searchQuery, sortDir, sortKey, stageFilter]);
 
   function toggleSort(key: SortKey) {
     if (sortKey === key) {
@@ -424,6 +442,14 @@ export function PipelineTable({ applications, cycleId }: PipelineTableProps) {
   return (
     <section className="space-y-4">
       <div className="flex flex-wrap items-center gap-2">
+        <Input
+          type="search"
+          placeholder="Search company, role…"
+          value={searchQuery}
+          onChange={(event) => setSearchQuery(event.target.value)}
+          className="h-9 w-full min-w-[12rem] border-border bg-transparent shadow-none sm:w-56"
+          aria-label="Search applications"
+        />
         <Select value={stageFilter} onValueChange={setStageFilterWithUrl}>
           <SelectTrigger
             className="h-9 w-48 border-border bg-transparent shadow-none"
@@ -491,7 +517,7 @@ export function PipelineTable({ applications, cycleId }: PipelineTableProps) {
         <div className="flex flex-col items-center justify-center gap-2 rounded-2xl border border-border bg-card px-6 py-16 text-center">
           <p className="text-sm font-medium">No applications match these filters</p>
           <p className="text-sm text-muted-foreground">
-            Try another stage or outcome, or clear the filters.
+            Try a different search, stage, or outcome, or clear the filters.
           </p>
         </div>
       ) : (
